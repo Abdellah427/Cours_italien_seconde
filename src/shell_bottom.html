@@ -1,0 +1,64 @@
+<section id="v-exercices" class="view" aria-labelledby="t-exos" hidden>
+  <div class="vhead">
+    <p class="eyebrow"><span class="fr">Les exercices du livre</span><span class="it inl">Gli esercizi del libro</span></p>
+    <h1 id="t-exos"><span class="fr">Exercices</span><span class="it sub-it">Esercizi</span></h1>
+    <p class="lead fr">Les énoncés du manuel, traduits. Écris ta réponse, puis touche « Vérifier ». Si tu bloques : l’indice, puis la solution commentée.</p>
+    <p class="lead it">I testi del libro, tradotti. Scrivi la risposta e tocca «Vérifier». Se ti blocchi: l’indizio, poi la soluzione spiegata.</p>
+  </div>
+  <div class="summary">
+    <div class="row"><span class="ui"><span class="fr">Exercices réussis</span><span class="it">Esercizi risolti</span></span><span class="big" id="ex-count">0 / 0</span></div>
+    <div class="prog"><i id="ex-bar"></i></div>
+  </div>
+  <div class="chips ui" role="group" aria-label="Filtre" id="ex-filter">
+    <button class="chip" type="button" data-f="all" aria-pressed="true"><span class="fr">Tous</span><span class="it">Tutti</span></button>
+    <button class="chip" type="button" data-f="rappels" aria-pressed="false"><span class="fr">Rappels</span><span class="it">Ripasso</span></button>
+    <button class="chip" type="button" data-f="succ" aria-pressed="false"><span class="fr">Successives</span><span class="it">Successive</span></button>
+    <button class="chip" type="button" data-f="recip" aria-pressed="false"><span class="fr">Réciproques</span><span class="it">Reciproche</span></button>
+    <button class="chip" type="button" data-f="synth" aria-pressed="false"><span class="fr">Synthèse</span><span class="it">Sintesi</span></button>
+    <button class="chip" type="button" data-f="todo" aria-pressed="false"><span class="fr">À faire</span><span class="it">Da fare</span></button>
+  </div>
+  <div id="ex-list"></div>
+</section>
+
+<section id="v-entrainement" class="view" aria-labelledby="t-train" hidden>
+  <div class="vhead">
+    <p class="eyebrow"><span class="fr">Questions sans fin</span><span class="it inl">Domande senza fine</span></p>
+    <h1 id="t-train"><span class="fr">Entraînement</span><span class="it sub-it">Allenamento</span></h1>
+    <p class="lead fr">Une nouvelle question à chaque fois, avec d’autres nombres. Choisis un thème et enchaîne les bonnes réponses.</p>
+    <p class="lead it">Ogni volta una domanda nuova, con altri numeri. Scegli un argomento e fai una serie di risposte giuste.</p>
+  </div>
+  <div class="chips ui" role="group" aria-label="Thème" id="tr-modes">
+    <button class="chip" type="button" data-m="mix" aria-pressed="true"><span class="fr">Tout mélangé</span><span class="it">Tutto misto</span></button>
+    <button class="chip" type="button" data-m="cm" aria-pressed="false"><span class="fr">Coefficients</span><span class="it">Coefficienti</span></button>
+    <button class="chip" type="button" data-m="succ" aria-pressed="false"><span class="fr">Taux global</span><span class="it">Tasso globale</span></button>
+    <button class="chip" type="button" data-m="recip" aria-pressed="false"><span class="fr">Taux réciproque</span><span class="it">Tasso reciproco</span></button>
+    <button class="chip" type="button" data-m="init" aria-pressed="false"><span class="fr">Valeur de départ</span><span class="it">Valore iniziale</span></button>
+  </div>
+  <div class="stats ui">
+    <div class="stat"><b id="tr-streak">0</b><small><span class="fr">Série</span><span class="it">Serie</span></small></div>
+    <div class="stat"><b id="tr-best">0</b><small><span class="fr">Record</span><span class="it">Record</span></small></div>
+    <div class="stat"><b id="tr-total">0</b><small><span class="fr">Réussies</span><span class="it">Giuste</span></small></div>
+  </div>
+  <div class="card" id="tr-card"></div>
+</section>
+
+<section id="v-controle" class="view" aria-labelledby="t-test" hidden>
+  <div class="vhead">
+    <p class="eyebrow"><span class="fr">Comme le jour du contrôle</span><span class="it inl">Come il giorno della verifica</span></p>
+    <h1 id="t-test"><span class="fr">Contrôle blanc</span><span class="it sub-it">Verifica di prova</span></h1>
+    <p class="lead fr">10 questions, une seule bonne réponse par question, 2 points chacune. Réponds à tout, puis corrige. Un nouveau sujet à chaque fois.</p>
+    <p class="lead it">10 domande, una sola risposta giusta per domanda, 2 punti ciascuna. Rispondi a tutto, poi correggi. Ogni volta un compito nuovo.</p>
+    <p class="best" id="test-best"></p>
+  </div>
+  <div class="card" id="test-box"></div>
+</section>
+</main>
+
+<nav class="tabbar ui" aria-label="Navigation">
+  <div class="tabbar-in">
+    <a class="tab" href="#cours" data-v="cours"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span class="fr">Cours</span><span class="it">Lezione</span></a>
+    <a class="tab" href="#exercices" data-v="exercices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.2-4.8L15.8 4.6l3.6 3.6L8.8 18.8z"/><path d="M13.6 6.8l3.6 3.6"/></svg><span class="fr">Exercices</span><span class="it">Esercizi</span></a>
+    <a class="tab" href="#entrainement" data-v="entrainement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span class="fr">Entraînement</span><span class="it">Allenamento</span></a>
+    <a class="tab" href="#controle" data-v="controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 9l1.5 1.5 3-3M8.5 15.5h7"/></svg><span class="fr">Contrôle</span><span class="it">Verifica</span></a>
+  </div>
+</nav>

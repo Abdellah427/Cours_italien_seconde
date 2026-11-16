@@ -1,0 +1,114 @@
+<svg class="owl-svg" viewBox="0 0 820 920" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="owl-cl-g"><circle cx="240" cy="290" r="128"/></clipPath>
+    <clipPath id="owl-cl-d"><circle cx="580" cy="290" r="128"/></clipPath>
+  </defs>
+  <g class="owl-all">
+    <g class="owl-wing owl-wing-l"><path d="M150 410 C70 432 18 515 22 602 C27 688 82 742 140 752 C118 640 118 520 150 410 Z" fill="#4B62BC"/></g>
+    <g class="owl-wing owl-wing-r"><path d="M670 410 C750 432 802 515 798 602 C793 688 738 742 680 752 C702 640 702 520 670 410 Z" fill="#4B62BC"/></g>
+    <g class="owl-body">
+      <path d="M737.4 412 C737.8 421.2 738 430.5 738 440 C738 668 640 846 410 846 C180 846 82 668 82 440 C82 430.5 82.2 421.2 82.6 412 Z" fill="#8897CB"/>
+      <ellipse cx="415" cy="648" rx="224" ry="203" fill="#FEF4EC"/>
+    </g>
+    <g class="owl-crane"><path d="M82 440 C82 210 192 64 410 64 C628 64 738 210 738 440 Z" fill="#8897CB"/></g>
+    <g class="owl-body owl-body-avant">
+      <g class="owl-acc owl-acc-star"><path d="M415 560 L431 596 L470 600 L441 626 L449 664 L415 645 L381 664 L389 626 L360 600 L399 596 Z" fill="#FFDA1B" stroke="#E2B400" stroke-width="6" stroke-linejoin="round"/></g>
+      <g class="owl-acc owl-acc-scarf">
+        <path d="M190 448 C300 492 520 492 630 448 L640 500 C520 548 300 548 180 500 Z" fill="#FFDA1B"/>
+        <path d="M560 500 L600 640 L540 628 L520 508 Z" fill="#F2C200"/>
+        <path d="M232 474 L248 518 M300 488 L312 530 M372 494 L378 538 M444 494 L440 538 M516 488 L506 530 M584 474 L568 518" stroke="#E2B400" stroke-width="7" stroke-linecap="round"/>
+      </g>
+    </g>
+    <g class="owl-feet" fill="#F2B33D" stroke="#DE9A22" stroke-width="5">
+      <g class="owl-foot owl-foot-l"><ellipse cx="222" cy="832" rx="24" ry="46"/><ellipse cx="262" cy="840" rx="24" ry="48"/><ellipse cx="302" cy="832" rx="24" ry="46"/></g>
+      <g class="owl-foot owl-foot-r"><ellipse cx="518" cy="832" rx="24" ry="46"/><ellipse cx="558" cy="840" rx="24" ry="48"/><ellipse cx="598" cy="832" rx="24" ry="46"/></g>
+    </g>
+    <g class="owl-head">
+      <g class="owl-tuft owl-tuft-l"><path d="M232 132 C178 118 118 96 92 24 C128 46 170 56 208 58 L186 76 C222 80 258 96 284 122 Z" fill="#8897CB"/></g>
+      <g class="owl-tuft owl-tuft-r"><path d="M588 132 C642 118 702 96 728 24 C692 46 650 56 612 58 L634 76 C598 80 562 96 536 122 Z" fill="#8897CB"/></g>
+      <g class="owl-face">
+        <path d="M226 106 C272 44 340 24 410 24 C480 24 548 44 594 106 C540 128 462 156 410 210 C358 156 280 128 226 106 Z" fill="#4B62BC"/>
+        <g class="owl-acc owl-acc-pencil">
+          <path d="M120 70 L262 168 L250 184 L108 86 Z" fill="#FFDA1B" stroke="#E2B400" stroke-width="4"/>
+          <path d="M262 168 L290 196 L250 184 Z" fill="#F7E2C2"/><path d="M280 186 L290 196 L276 192 Z" fill="#333"/>
+          <path d="M108 86 L120 70 L104 60 L94 76 Z" fill="#F28B9B"/>
+        </g>
+        <g class="owl-eye owl-eye-l">
+          <g class="owl-oeil">
+            <circle cx="240" cy="290" r="128" fill="#FEF4EC"/>
+            <g class="owl-look"><g class="owl-iris">
+              <circle cx="245" cy="292" r="78" fill="#F2B33D"/>
+              <circle class="owl-pupil" cx="245" cy="292" r="60" fill="#111"/>
+              <circle cx="214" cy="270" r="17" fill="#fff"/>
+              <circle cx="262" cy="318" r="7" fill="#fff" opacity=".7"/>
+            </g></g>
+            <g clip-path="url(#owl-cl-g)"><g class="owl-lid">
+              <path d="M100 -180 H380 V0 Q240 280 100 0 Z" fill="#8897CB"/>
+              <path d="M100 0 Q240 280 380 0" fill="none" stroke="#4B62BC" stroke-width="13"/>
+            </g></g>
+          </g>
+          <path class="owl-happy" display="none" d="M168 310 Q240 220 312 310" fill="none" stroke="#111" stroke-width="22" stroke-linecap="round"/>
+          <path class="owl-closed" display="none" d="M168 292 Q240 340 312 292" fill="none" stroke="#111" stroke-width="18" stroke-linecap="round"/>
+        </g>
+        <g class="owl-eye owl-eye-r">
+          <g class="owl-oeil">
+            <circle cx="580" cy="290" r="128" fill="#FEF4EC"/>
+            <g class="owl-look"><g class="owl-iris">
+              <circle cx="572" cy="292" r="78" fill="#F2B33D"/>
+              <circle class="owl-pupil" cx="572" cy="292" r="60" fill="#111"/>
+              <circle cx="541" cy="270" r="17" fill="#fff"/>
+              <circle cx="589" cy="318" r="7" fill="#fff" opacity=".7"/>
+            </g></g>
+            <g clip-path="url(#owl-cl-d)"><g class="owl-lid">
+              <path d="M440 -180 H720 V0 Q580 280 440 0 Z" fill="#8897CB"/>
+              <path d="M440 0 Q580 280 720 0" fill="none" stroke="#4B62BC" stroke-width="13"/>
+            </g></g>
+          </g>
+          <path class="owl-happy" display="none" d="M508 310 Q580 220 652 310" fill="none" stroke="#111" stroke-width="22" stroke-linecap="round"/>
+          <path class="owl-closed" display="none" d="M508 292 Q580 340 652 292" fill="none" stroke="#111" stroke-width="18" stroke-linecap="round"/>
+        </g>
+        <g class="owl-glasses">
+          <circle cx="220" cy="290" r="166" fill="none" stroke="var(--owl-glasses, #333)" stroke-width="17"/>
+          <circle cx="600" cy="290" r="166" fill="none" stroke="var(--owl-glasses, #333)" stroke-width="17"/>
+          <path d="M382 282 Q410 262 438 282" fill="none" stroke="var(--owl-glasses, #333)" stroke-width="15" stroke-linecap="round"/>
+        </g>
+        <path class="owl-beak" d="M384 304 L436 304 L410 414 Z" fill="#F2B33D" stroke="#F2B33D" stroke-width="10" stroke-linejoin="round"/>
+      </g>
+      <g class="owl-acc owl-acc-cap">
+        <path d="M410 -38 L640 24 L410 86 L180 24 Z" fill="#23284F"/>
+        <path d="M290 56 L290 104 C350 132 470 132 530 104 L530 56 L410 86 Z" fill="#2F3566"/>
+        <path d="M410 24 L600 50 L600 132" fill="none" stroke="#FFDA1B" stroke-width="7"/>
+        <circle cx="600" cy="140" r="13" fill="#FFDA1B"/>
+      </g>
+    </g>
+    <g class="owl-acc owl-acc-book" display="none">
+      <path d="M157 588.3 C253.6 556.1 346.8 565.3 410 599.8 C473.2 565.3 566.4 556.1 663 588.3 L676.8 721.7 C577.9 689.5 480.1 698.7 410 737.8 C339.9 698.7 242.1 689.5 143.2 721.7 Z" fill="#2F3566"/>
+      <path d="M175.4 574.5 C266.2 544.6 353.6 553.8 410 588.3 L410 717.1 C353.6 682.6 266.2 675.7 168.5 703.3 Z" fill="#FFFFFF"/>
+      <path d="M644.6 574.5 C553.8 544.6 466.4 553.8 410 588.3 L410 717.1 C466.4 682.6 553.8 675.7 651.5 703.3 Z" fill="#FFFFFF"/>
+      <path d="M214.5 602.1 C274.3 582.5 332.9 587.1 382.4 611.3 M212.2 634.3 C272 614.8 330.6 619.4 382.4 643.5 M209.9 666.5 C269.7 647 328.4 651.5 382.4 675.7 M437.6 611.3 C487.1 587.1 545.7 582.5 605.5 602.1" fill="none" stroke="#B9C0E8" stroke-width="9" stroke-linecap="round"/>
+      <path d="M444.5 678 C469.8 632 499.7 620.5 522.7 648.1 C545.7 675.7 573.3 671.1 610.1 622.8" fill="none" stroke="#4D61F4" stroke-width="9" stroke-linecap="round"/>
+      <g class="owl-page">
+        <path d="M644.6 574.5 C553.8 544.6 466.4 553.8 410 588.3 L410 717.1 C466.4 682.6 553.8 675.7 651.5 703.3 Z" fill="#F6F7FE"/>
+        <path d="M437.6 611.3 C487.1 587.1 545.7 582.5 605.5 602.1 M437.6 643.5 C487.1 619.4 545.7 614.8 607.8 634.3" fill="none" stroke="#C9CFF0" stroke-width="9" stroke-linecap="round"/>
+      </g>
+      <path d="M410 590.6 V714.8" stroke="#D3D8F2" stroke-width="6"/>
+      <path d="M111 696.4 C113.3 661.9 143.2 645.8 173.1 652.7 C203 659.6 219.1 687.2 209.9 712.5 C200.7 737.8 166.2 749.3 138.6 740.1 C120.2 733.2 111 717.1 111 696.4 Z" fill="#4B62BC"/>
+      <path d="M709 696.4 C706.7 661.9 676.8 645.8 646.9 652.7 C617 659.6 600.9 687.2 610.1 712.5 C619.3 737.8 653.8 749.3 681.4 740.1 C699.8 733.2 709 717.1 709 696.4 Z" fill="#4B62BC"/>
+    </g>
+    <g class="owl-acc owl-acc-loupe" display="none">
+      <path d="M690 400 L776 506" stroke="#23284F" stroke-width="44" stroke-linecap="round"/>
+      <path d="M712 428 L768 496" stroke="#FFDA1B" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="580" cy="290" r="150" fill="#F2F6FF" fill-opacity=".14" stroke="#23284F" stroke-width="24"/>
+      <path d="M486 216 C506 184 536 166 568 160" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" opacity=".8"/>
+    </g>
+    <g class="owl-acc owl-acc-card" display="none">
+      <g transform="translate(676 548) rotate(-10)"><g class="owl-card">
+        <rect x="-75" y="-105" width="150" height="210" rx="18" fill="#FFFFFF" stroke="#23284F" stroke-width="9"/>
+        <rect x="-58" y="-88" width="116" height="176" rx="10" fill="none" stroke="#C9CFF0" stroke-width="5"/>
+        <path d="M-30 -42 H8 C28 -42 40 -30 40 -13 C40 1 32 11 19 15 L42 42 H17 L-3 17 H-8 V42 H-30 Z M-8 -24 V0 H6 C14 0 19 -5 19 -12 C19 -19 14 -24 6 -24 Z" fill="#4D61F4" fill-rule="evenodd"/>
+        <path d="M-50 -95 L-46 -84 L-34 -83 L-43 -76 L-40 -64 L-50 -71 L-60 -64 L-57 -76 L-66 -83 L-54 -84 Z" fill="#FFDA1B" stroke="#E2B400" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M50 61 L54 72 L66 73 L57 80 L60 92 L50 85 L40 92 L43 80 L34 73 L46 72 Z" fill="#FFDA1B" stroke="#E2B400" stroke-width="3" stroke-linejoin="round"/>
+      </g></g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,114 @@
+<section id="v-cours" class="view" aria-labelledby="t-cours">
+  <div class="vhead">
+    <p class="eyebrow"><span class="fr">Chapitre 10 · Information chiffrée</span><span class="it inl">Capitolo 10 · Informazione numerica</span></p>
+    <h1 id="t-cours"><span class="fr">Le cours</span><span class="it sub-it">La lezione</span></h1>
+    <p class="lead fr">Évolutions successives et évolutions réciproques, pas à pas, avec les exemples du livre (pages 302 et 303). Touche une partie pour y aller.</p>
+    <p class="lead it">Variazioni successive e variazioni reciproche, passo dopo passo, con gli esempi del libro (pagine 302 e 303). Tocca una parte per andarci.</p>
+    <div class="mini ui" id="home-prog"></div>
+  </div>
+  <div class="toc ui" role="group" aria-label="Parties">
+    <button class="chip" type="button" data-go="l1"><span class="n">1</span><span class="fr">Rappels</span><span class="it">Ripasso</span></button>
+    <button class="chip" type="button" data-go="l2"><span class="n">2</span><span class="fr">Successives</span><span class="it">Successive</span></button>
+    <button class="chip" type="button" data-go="l3"><span class="n">3</span><span class="fr">Réciproques</span><span class="it">Reciproche</span></button>
+    <button class="chip" type="button" data-go="l4"><span class="n">4</span><span class="fr">Valeur de départ</span><span class="it">Valore iniziale</span></button>
+    <button class="chip" type="button" data-go="l5"><span class="n">5</span><span class="fr">Pièges</span><span class="it">Trappole</span></button>
+    <button class="chip" type="button" data-go="l6"><span class="n">6</span><span class="fr">Fiche</span><span class="it">Scheda</span></button>
+    <button class="chip" type="button" data-go="l7"><span class="n">7</span><span class="fr">Lexique</span><span class="it">Lessico</span></button>
+  </div>
+
+  <article class="lesson" id="l1">
+    <div class="lhead"><span class="lnum">1</span><h2><span class="fr">Rappels : taux d’évolution et coefficient multiplicateur</span><span class="it sub-it">Ripasso: tasso di variazione e coefficiente moltiplicativo</span></h2></div>
+    <p class="fr">Une quantité passe d’une <b>valeur initiale</b> V<sub>i</sub> à une <b>valeur finale</b> V<sub>f</sub>. Par exemple, un prix passe de 50 € à 60 €.</p>
+    <p class="it">Una quantità passa da un <b>valore iniziale</b> V<sub>i</sub> a un <b>valore finale</b> V<sub>f</sub>. Per esempio, un prezzo passa da 50 € a 60 €.</p>
+
+    <div class="box def"><span class="tag ui"><span class="fr">Définition</span><span class="it">Definizione</span></span>
+      <p class="fr">Le <b>taux d’évolution</b> de V<sub>i</sub> à V<sub>f</sub> est le nombre t = (V<sub>f</sub> − V<sub>i</sub>) ÷ V<sub>i</sub>. On l’écrit souvent en pourcentage.</p>
+      <p class="it">Il <b>tasso di variazione</b> da V<sub>i</sub> a V<sub>f</sub> è il numero t = (V<sub>f</sub> − V<sub>i</sub>) ÷ V<sub>i</sub>. Spesso si scrive in percentuale.</p>
+      <p class="fr">Si t &gt; 0, c’est une <b class="upc">augmentation</b>. Si t &lt; 0, c’est une <b class="downc">diminution</b>.</p>
+      <p class="it">Se t &gt; 0, è un <b class="upc">aumento</b>. Se t &lt; 0, è una <b class="downc">diminuzione</b>.</p>
+    </div>
+
+    <div class="box prop"><span class="tag ui"><span class="fr">Propriété</span><span class="it">Proprietà</span></span>
+      <p class="fr">Le <b>coefficient multiplicateur</b> (CM) de l’évolution est C = V<sub>f</sub> ÷ V<sub>i</sub>, et on a toujours :</p>
+      <p class="it">Il <b>coefficiente moltiplicativo</b> (CM) della variazione è C = V<sub>f</sub> ÷ V<sub>i</sub>, e vale sempre:</p>
+      <div class="formula">C = 1 + t</div>
+      <p class="fr">Augmenter de 20 % (t = 0,2) revient à multiplier par 1 + 0,2 = 1,2. Diminuer de 25 % (t = −0,25) revient à multiplier par 1 − 0,25 = 0,75. Dans les deux cas, C = 1 + t.</p>
+      <p class="it">Aumentare del 20% (t = 0,2) vuol dire moltiplicare per 1 + 0,2 = 1,2. Diminuire del 25% (t = −0,25) vuol dire moltiplicare per 1 − 0,25 = 0,75. In tutti e due i casi, C = 1 + t.</p>
+    </div>
+
+    <div class="chain" data-spec='{"nodes":["50 €","60 €"],"ops":["× 1,2"],"top":[{"fr":"Augmenter de 20 %","it":"Aumentare del 20%"}],"tones":["up"]}'></div>
+
+    <h3><span class="fr">Les coefficients à connaître</span><span class="it sub-it">I coefficienti da conoscere</span></h3>
+    <table class="ctable">
+      <thead><tr><th><span class="fr">Évolution</span><span class="it inl">Variazione</span></th><th><span class="fr">Taux t</span><span class="it inl">Tasso t</span></th><th>C = 1 + t</th></tr></thead>
+      <tbody>
+        <tr><td><span class="fr">Augmenter de 20 %</span><span class="it inl">Aumentare del 20%</span></td><td>0,2</td><td class="m upc">× 1,2</td></tr>
+        <tr><td><span class="fr">Augmenter de 4,5 %</span><span class="it inl">Aumentare del 4,5%</span></td><td>0,045</td><td class="m upc">× 1,045</td></tr>
+        <tr><td><span class="fr">Augmenter de 100 %</span><span class="it inl">Aumentare del 100%</span></td><td>1</td><td class="m upc">× 2</td></tr>
+        <tr><td><span class="fr">Diminuer de 25 %</span><span class="it inl">Diminuire del 25%</span></td><td>−0,25</td><td class="m downc">× 0,75</td></tr>
+        <tr><td><span class="fr">Diminuer de 12 %</span><span class="it inl">Diminuire del 12%</span></td><td>−0,12</td><td class="m downc">× 0,88</td></tr>
+        <tr><td><span class="fr">Diminuer de 2 %</span><span class="it inl">Diminuire del 2%</span></td><td>−0,02</td><td class="m downc">× 0,98</td></tr>
+      </tbody>
+    </table>
+
+    <div class="box meth"><span class="tag ui"><span class="fr">Méthode</span><span class="it">Metodo</span></span>
+      <p class="fr"><b>Du coefficient au taux :</b> t = C − 1. Si C &gt; 1, c’est une augmentation ; si C &lt; 1, c’est une diminution.</p>
+      <p class="it"><b>Dal coefficiente al tasso:</b> t = C − 1. Se C &gt; 1, è un aumento; se C &lt; 1, è una diminuzione.</p>
+      <p class="fr">Exemples : C = 0,9 donne t = 0,9 − 1 = −0,1 = −10 % (diminution). C = 1,015 donne t = 0,015 = +1,5 % (augmentation).</p>
+      <p class="it">Esempi: C = 0,9 dà t = 0,9 − 1 = −0,1 = −10% (diminuzione). C = 1,015 dà t = 0,015 = +1,5% (aumento).</p>
+    </div>
+
+    <div class="lab" data-lab="cm"></div>
+
+    <div class="box ex"><span class="tag ui"><span class="fr">Exemple</span><span class="it">Esempio</span></span>
+      <p class="fr">En 2008, la Poste distribuait 18 milliards de lettres ; en 2022, seulement 7 milliards.</p>
+      <p class="it">Nel 2008 le Poste francesi consegnavano 18 miliardi di lettere; nel 2022 solo 7 miliardi.</p>
+      <p class="fr">t = (7 − 18) ÷ 18 ≈ −0,6111 = <b>−61,11 %</b> : le nombre de lettres a diminué d’environ 61,11 %.</p>
+      <p class="it">t = (7 − 18) ÷ 18 ≈ −0,6111 = <b>−61,11%</b>: il numero di lettere è diminuito di circa il 61,11%.</p>
+    </div>
+  </article>
+
+  <article class="lesson" id="l2">
+    <div class="lhead"><span class="lnum">2</span><h2><span class="fr">Évolutions successives : le taux global</span><span class="it sub-it">Variazioni successive: il tasso globale</span></h2></div>
+    <p class="fr">Une quantité change <b>plusieurs fois de suite</b> : par exemple un prix augmente, puis diminue. On cherche l’évolution globale, du début à la fin.</p>
+    <p class="it">Una quantità cambia <b>più volte di seguito</b>: per esempio un prezzo aumenta e poi diminuisce. Cerchiamo la variazione globale, dall’inizio alla fine.</p>
+
+    <div class="box prop"><span class="tag ui"><span class="fr">Propriété</span><span class="it">Proprietà</span></span>
+      <p class="fr">Lorsqu’une quantité Q subit plusieurs évolutions successives (augmentations et/ou diminutions), alors le <b>coefficient multiplicateur global</b> est le <b>produit</b> des coefficients multiplicateurs de chaque évolution.</p>
+      <p class="it">Quando una quantità Q subisce più variazioni successive (aumenti e/o diminuzioni), il <b>coefficiente moltiplicativo globale</b> è il <b>prodotto</b> dei coefficienti moltiplicativi di ogni variazione.</p>
+      <p class="fr">Avec deux évolutions de taux t<sub>1</sub> puis t<sub>2</sub>, le taux global T vérifie :</p>
+      <p class="it">Con due variazioni di tasso t<sub>1</sub> e poi t<sub>2</sub>, il tasso globale T verifica:</p>
+      <div class="formula">1 + T = (1 + t<sub>1</sub>)(1 + t<sub>2</sub>)</div>
+    </div>
+
+    <div class="chain" data-spec='{"nodes":["Q","Q₁","Q₂"],"ops":["× (1 + t₁)","× (1 + t₂)"],"bottom":{"op":"× (1 + T)","dir":"fwd"}}'></div>
+
+    <div class="box note"><span class="tag ui"><span class="fr">À noter</span><span class="it">Attenzione</span></span>
+      <p class="fr">Dans le cas d’évolutions successives, <b>il ne faut pas additionner les taux d’évolution</b> ! On <b>multiplie</b> les coefficients.</p>
+      <p class="it">Con variazioni successive <b>non si sommano i tassi di variazione</b>! Si <b>moltiplicano</b> i coefficienti.</p>
+    </div>
+
+    <div class="box ex"><span class="tag ui"><span class="fr">Exemple du livre</span><span class="it">Esempio del libro</span></span>
+      <p class="fr">Un site marchand décide d’augmenter tous ses prix de 20 % avant Noël, puis de les diminuer de 25 % pour les soldes de mi-janvier.</p>
+      <p class="it">Un sito di vendita online decide di aumentare tutti i prezzi del 20% prima di Natale, poi di diminuirli del 25% per i saldi di metà gennaio.</p>
+      <div class="chain" data-spec='{"nodes":["P","P₁","P₂"],"ops":["× 1,2","× 0,75"],"top":[{"fr":"Augmenter de 20 %","it":"Aumentare del 20%"},{"fr":"Diminuer de 25 %","it":"Diminuire del 25%"}],"tones":["up","down"],"bottom":{"op":"× 0,9","dir":"fwd","tone":"down"}}'></div>
+      <p class="fr">Coefficient global : 1,2 × 0,75 = 0,9. Or 0,9 − 1 = −0,1 : durant les soldes, les prix n’ont baissé que de <b>10 %</b> par rapport aux prix d’origine (et non de 5 %).</p>
+      <p class="it">Coefficiente globale: 1,2 × 0,75 = 0,9. E 0,9 − 1 = −0,1: durante i saldi i prezzi sono scesi solo del <b>10%</b> rispetto ai prezzi di partenza (e non del 5%).</p>
+      <p class="fr">Un jouet à 80 € en octobre sera vendu 80 × 0,9 = <b>72 €</b> pendant les soldes.</p>
+      <p class="it">Un giocattolo da 80 € a ottobre costerà 80 × 0,9 = <b>72 €</b> durante i saldi.</p>
+    </div>
+
+    <div class="box meth"><span class="tag ui"><span class="fr">Méthode en 3 étapes</span><span class="it">Metodo in 3 passi</span></span>
+      <ol class="steps fr"><li>J’écris le coefficient de chaque évolution : +15 % → 1,15 ; −30 % → 0,7.</li><li>Je multiplie tous les coefficients : c’est le coefficient global C.</li><li>Je calcule T = C − 1 et je l’écris en pourcentage, avec son signe.</li></ol>
+      <ol class="steps it"><li>Scrivo il coefficiente di ogni variazione: +15% → 1,15; −30% → 0,7.</li><li>Moltiplico tutti i coefficienti: è il coefficiente globale C.</li><li>Calcolo T = C − 1 e lo scrivo in percentuale, con il suo segno.</li></ol>
+    </div>
+
+    <div class="box ex"><span class="tag ui"><span class="fr">Exemple (Capacité 4)</span><span class="it">Esempio (Capacità 4)</span></span>
+      <p class="fr">Le cours d’une action augmente de 15 % puis de 20 %. C = 1,15 × 1,2 = 1,38 et 1,38 − 1 = 0,38 : le cours a augmenté globalement de <b>38 %</b> (et non de 35 %).</p>
+      <p class="it">La quotazione di un’azione aumenta del 15% e poi del 20%. C = 1,15 × 1,2 = 1,38 e 1,38 − 1 = 0,38: la quotazione è aumentata in totale del <b>38%</b> (e non del 35%).</p>
+      <p class="fr">Avec plus de deux évolutions, on multiplie tous les coefficients : 1,15 × 1,2 × 1,45 × 0,7 × 0,85 × 0,84 ≈ 1. Au bout de six mois, l’action vaut presque son prix de départ.</p>
+      <p class="it">Con più di due variazioni si moltiplicano tutti i coefficienti: 1,15 × 1,2 × 1,45 × 0,7 × 0,85 × 0,84 ≈ 1. Dopo sei mesi l’azione vale quasi come all’inizio.</p>
+    </div>
+
+    <div class="lab" data-lab="succ"></div>
+  </article>

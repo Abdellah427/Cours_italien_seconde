@@ -1,0 +1,39 @@
+/* Habillage SCOLAIR : boutons à relief, barre d'onglets, bulles d'Hector */
+h1,h2,h3,h4{font-weight:600;letter-spacing:.005em}
+.vhead h1{font-weight:700;color:var(--blue-ink)}
+.eyebrow{color:var(--blue-deep);font-family:var(--f-display);font-weight:600}
+.appbar{background:var(--card)}
+.brand .owl-slot{flex:none;width:42px}
+.owl-slot .owl{width:100%}
+.brand-t{font-weight:700;color:var(--blue-ink)}
+.brand-s{font:600 .7rem/1.2 var(--f-display);letter-spacing:.09em;color:var(--blue-deep);text-transform:uppercase}
+.seg button{font-family:var(--f-display);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff;box-shadow:0 2px 0 var(--blue-deep)}
+.tabbar{background:var(--card);box-shadow:0 -4px 16px rgba(27,31,62,.04)}
+.tab{min-height:58px;gap:3px}
+.tab svg{width:24px;height:24px;padding:3px 13px;box-sizing:content-box;border-radius:999px;transition:background-color .2s var(--ease),color .2s var(--ease)}
+.tab[aria-current="page"]{color:var(--blue-ink);background:transparent}
+.tab[aria-current="page"] svg{background:var(--blue-soft);color:var(--blue-deep)}
+.btn{font-family:var(--f-display);font-weight:600;border-radius:14px;border:1.5px solid var(--line-strong);box-shadow:0 3px 0 var(--line-strong);transition:transform .08s,box-shadow .08s}
+.btn:active:not([disabled]){transform:translateY(2px);box-shadow:0 1px 0 var(--line-strong)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 3px 0 var(--blue-deep)}
+.btn.pri:active:not([disabled]){box-shadow:0 1px 0 var(--blue-deep)}
+.btn.yellow{background:var(--yellow);border-color:var(--yellow);color:var(--ink);box-shadow:0 3px 0 var(--yellow-deep)}
+.chip{font-family:var(--f-display);font-weight:600}
+.box.ex > .tag{background:var(--yellow);color:var(--yellow-ink)}
+.lnum,.exo-n{border-radius:14px}
+.lnum{background:var(--yellow);color:var(--ink);box-shadow:0 3px 0 var(--yellow-deep)}
+.exo.done .exo-n{background:var(--good-soft);color:var(--good)}
+.c-node{fill:var(--blue)}
+.choice.sel{border-color:var(--blue);background:var(--blue-soft)}
+.coach{display:grid;grid-template-columns:var(--owl-w,64px) minmax(0,1fr);gap:14px;align-items:center;margin:14px 0 6px}
+.coach .owl-slot{width:var(--owl-w,64px)}
+.coach .bubble{font-size:.94rem}
+.bubble .it{display:block;font-weight:400;color:var(--owl-dark);font-size:.95em;margin-top:2px}
+html[data-lang="it"] .bubble .it{font-weight:700;color:var(--ink);font-size:1em;margin:0}
+.score .coach{--owl-w:96px;text-align:left;margin:10px 0 0}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:70;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+.owl-bulle .it{display:block;font-weight:400;color:var(--owl-dark)}
