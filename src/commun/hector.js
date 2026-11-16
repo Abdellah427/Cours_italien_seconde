@@ -1,15 +1,14 @@
-
   // Hector, la chouette de SCOLAIR : il accompagne, félicite et encourage.
   var HK = window.Hector || null, owlTop = null;
   function mkOwl(slot, opts){
     if (!HK || !slot) return null;
     try { var o = new HK.Owl(opts || {}); slot.appendChild(o.el); return o; } catch (e) { return null; }
   }
-  function owlEvt(kind, n){
+  function owlEvt(kind, n, slot){
     if (!HK) return;
     try {
       if (kind === 'note'){
-        var t = mkOwl($('#test-owl'), { sommeil: false });
+        var t = mkOwl(slot, { sommeil: false });
         if (t){ if (n >= 14){ t.anim(n === 20 ? 'toque' : 'fierte'); } else if (n >= 10) t.anim('oui'); else t.set('think', 2500); }
         if (n >= 16) HK.confetti();
         return;
@@ -25,13 +24,25 @@
       }
     } catch (e) {}
   }
+  /* Ce que dit Hector quand on le touche : quelques phrases générales, plus celles du chapitre ouvert */
+  var DIT = [
+    ['Hi hi, ça chatouille !', 'Ih ih, mi fai il solletico!'],
+    ['Tu progresses à chaque question.', 'Migliori a ogni domanda.'],
+    ['Une erreur, c’est une chose de plus que tu sais.', 'Un errore è una cosa in più che sai.']
+  ];
+  function owlChapter(c){
+    if (!HK || !HK.phrases) return;
+    var list = DIT.slice();
+    (c ? [c] : CHAPS).forEach(function(x){ list = list.concat(x.dit || []); });
+    HK.phrases(list);
+  }
   (function(){
     owlTop = mkOwl($('#owl-top'), {});
-    var home = $('#v-cours .vhead');
+    var home = $('#v-accueil .vhead');
     if (home && HK){
       var c = document.createElement('div');
       c.className = 'coach'; c.setAttribute('data-owl-host', '');
-      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">Salut, moi c’est Hector ! On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.</span><span class="it">Ciao, sono Hector! Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
+      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
       home.appendChild(c);
       var o = mkOwl($('.owl-slot', c), {});
       if (o) setTimeout(function(){ try { o.anim('salut'); } catch (e) {} }, 500);

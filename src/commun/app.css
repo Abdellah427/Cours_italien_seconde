@@ -245,3 +245,70 @@ pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;o
 
 .toc{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:10px 16px 8px}
 html{scroll-padding-top:calc(var(--abh,60px) + 62px)}
+
+/* Accueil : la liste des chapitres */
+body.at-home .tabbar{display:none}
+body.at-home main{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+.brand-x{min-width:0}
+.brand-t{overflow:hidden;text-overflow:ellipsis}
+.hlist{display:grid;gap:12px;margin:14px 0}
+.chap{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border-radius:22px;padding:16px 12px 16px 14px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);border:1.5px solid transparent;transition:transform .08s}
+.chap:active{transform:translateY(2px);border-color:var(--blue-mid)}
+.chap-n{width:52px;height:52px;border-radius:16px;background:var(--yellow);color:var(--ink);box-shadow:0 3px 0 var(--yellow-deep);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.45rem;line-height:1}
+.chap-b{display:grid;gap:3px;min-width:0}
+.chap-k{font:600 .7rem/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--blue-deep);display:flex;gap:8px;align-items:center}
+.chap-new{background:var(--good-soft);color:var(--up-ink);border-radius:999px;padding:2px 8px;letter-spacing:.04em}
+.chap-t{font-family:var(--f-display);font-weight:700;font-size:1.22rem;line-height:1.2;color:var(--blue-ink)}
+.chap-s{font-size:.86rem;color:var(--muted);line-height:1.35}
+html[data-lang="both"] .chap-s .it{display:block;color:var(--owl-dark)}
+.chap .prog{margin:6px 0 2px}
+.chap-m{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.78rem;color:var(--muted);font-weight:700}
+.chap-m b{color:var(--ink)}
+.chap-go{color:var(--blue);display:grid}
+.chap-go svg{width:22px;height:22px}
+.resume{width:100%;justify-content:space-between;margin:14px 0 2px;text-decoration:none;min-height:54px;text-align:left}
+.resume svg{flex:none}
+
+/* Cinq onglets : Accueil, puis les quatre vues du chapitre */
+.tabbar-in{display:flex;gap:2px}
+.tab{flex:1 1 auto;min-width:0;font-size:.7rem;white-space:nowrap}
+
+/* Exercice à faire sur le cahier, puis à comparer avec la solution */
+.selfhow{display:flex;gap:8px;align-items:flex-start;margin:4px 0 0;padding:10px 12px;border-radius:12px;background:var(--blue-soft);color:var(--blue-ink);font-weight:700;font-size:.92rem;line-height:1.4}
+.selfhow svg{flex:none;width:18px;height:18px;margin-top:2px}
+.selfq{margin:12px -14px -4px;padding:12px 14px 14px;border-top:1px dashed var(--line2);background:#fff;border-radius:0 0 13px 13px}
+.selfq p{font-weight:700;margin:0}
+.sok[aria-pressed="true"]{background:var(--good);border-color:var(--good);box-shadow:0 3px 0 var(--up-ink)}
+.panel.why{margin-top:8px}
+.exo-n.plus{background:var(--good-soft);color:var(--good)}
+
+/* Réponse à cases */
+.ans.fill{display:grid;gap:12px;justify-items:start}
+.ans.fill .al{width:auto}
+.fexp{font-size:1.22rem;line-height:1.5;max-width:100%}
+.fexp .sbx{white-space:nowrap}
+.ans.fill input.bx{min-height:46px;padding:6px 4px;margin:3px 2px;vertical-align:middle}
+.bx.ko{border-color:var(--down);background:var(--down-soft)}
+.sgn{font-family:var(--f-display);font-weight:700;font-size:1.3rem;width:40px;height:46px;margin:3px 2px;border-radius:10px;border:2px dashed var(--blue-mid);background:var(--blue-soft);color:var(--blue-ink);cursor:pointer;padding:0;line-height:1;vertical-align:middle}
+.fexp .frac input.bx{margin:4px 2px}
+
+/* Cours en plusieurs pages : boutons en bas de chaque partie, renvois vers les exercices */
+.pager{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:24px 0 8px}
+.pager .btn{justify-content:space-between;text-align:left;font-size:.88rem;min-height:56px;text-decoration:none;padding:8px 12px}
+.pager .btn span{min-width:0}
+.pager .btn svg{flex:none}
+.pager .btn:only-child{grid-column:1 / -1}
+.go-ex{border:2px dashed #C6D1EA;border-radius:18px;padding:12px;margin:18px 0;background:#FAFBFF}
+.go-t{font-family:var(--f-display);font-weight:700;font-size:1rem;margin:0 0 8px;display:flex;align-items:center;gap:8px;color:var(--blue-ink)}
+.go-t svg{width:20px;height:20px;color:var(--brand)}
+.go-l{display:grid;gap:8px}
+.go-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;padding:8px 10px;min-height:54px;border-radius:14px;border:1.5px solid var(--line2);background:#fff;cursor:pointer;font-weight:700;line-height:1.25;box-shadow:0 2px 0 var(--line2)}
+.go-b b{min-width:46px;height:38px;padding:0 6px;border-radius:12px;background:var(--blue-soft);color:var(--blue);font-family:var(--f-display);display:grid;place-items:center}
+.go-b i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line2);color:transparent;font-weight:700;font-size:.8rem}
+.go-b.done b{background:var(--good-soft);color:var(--good)}
+.go-b.done i{background:var(--up);border-color:var(--up);color:#fff}
+@media (max-width:350px){ .tab{font-size:.62rem} .tab svg{padding:3px 8px} .tabbar{padding-left:4px;padding-right:4px} }
+
+/* Tactile (iPhone) : pas de zoom au double appui sur les boutons, cibles d'au moins 40 px */
+a,button,input,label,summary,.chip,.tab,.choice{touch-action:manipulation}
+.seg button{min-width:40px;min-height:40px}

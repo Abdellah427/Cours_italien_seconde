@@ -1,8 +1,76 @@
+  /* Chapitre 10 : information chiffrée (évolutions successives, taux global, évolutions réciproques) */
+  (function(){
+  /* Petits labos du cours */
+  var ICON_LAB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/></svg>';
+  function stepper(id, label, val, min, max, step, onChange){
+    var wrap = document.createElement('div');
+    wrap.className = 'ctrl';
+    wrap.innerHTML = '<span>' + label + '</span><div class="stepper"><button type="button" aria-label="moins">' + MI + '</button><output aria-live="polite"></output><button type="button" aria-label="plus">+</button></div>';
+    var out = $('output', wrap), bs = $$('button', wrap);
+    function show(){ out.textContent = sgn(val, 1) + NB + '%'; out.className = val > 0 ? 'up' : val < 0 ? 'down' : ''; }
+    bs[0].addEventListener('click', function(){ if (val - step >= min){ val -= step; show(); onChange(val); } });
+    bs[1].addEventListener('click', function(){ if (val + step <= max){ val += step; show(); onChange(val); } });
+    show();
+    return wrap;
+  }
+  function rateFr(t){ return (t >= 0 ? 'Augmenter de ' : 'Diminuer de ') + num(Math.abs(t), 1) + ' %'; }
+  function rateIt(t){ var s = num(Math.abs(t), 1); return (t >= 0 ? 'Aumentare ' : 'Diminuire ') + (/^0/.test(s) ? 'dello ' : /^(8|11(,|$)|1(,|$))/.test(s) ? 'dell’' : 'del ') + s + '%'; }
+
+  function labCM(box){
+    box.innerHTML = '<p class="lab-t">' + ICON_LAB + biUI('Fais varier le taux', 'Fai variare il tasso') + '</p>' +
+      '<label class="ui" for="lab-cm-r"><span class="fr">Taux t :</span><span class="it">Tasso t:</span></label>' +
+      '<input type="range" id="lab-cm-r" min="-80" max="100" step="5" value="20">' +
+      '<div class="kv" aria-live="polite"></div><div class="chain"></div>';
+    var r = $('input', box), kv = $('.kv', box), ch = $('.chain', box);
+    function up(){
+      var t = Number(r.value), c = 1 + t / 100;
+      kv.innerHTML = bi({
+        fr: '<p><b>' + rateFr(t) + '</b> revient à multiplier par <b>' + num(c, 2) + '</b>.</p><p>C ' + (c > 1 ? '&gt; 1 : augmentation.' : c < 1 ? '&lt; 1 : diminution.' : '= 1 : pas de changement.') + '</p>',
+        it: '<p><b>' + rateIt(t) + '</b> vuol dire moltiplicare per <b>' + num(c, 2) + '</b>.</p><p>C ' + (c > 1 ? '&gt; 1: aumento.' : c < 1 ? '&lt; 1: diminuzione.' : '= 1: nessun cambiamento.') + '</p>'
+      });
+      drawChain(ch, { nodes: ['100 €', num(100 * c, 2) + ' €'], ops: [TIMES + ' ' + num(c, 2)], top: [{ fr: rateFr(t), it: rateIt(t) }], tones: [t >= 0 ? 'up' : 'down'] });
+    }
+    r.addEventListener('input', up);
+    document.addEventListener('langchange', up);
+    up();
+  }
+
+  function labSucc(box){
+    var t1 = 20, t2 = -25;
+    box.innerHTML = '<p class="lab-t">' + ICON_LAB + biUI('Essaie avec deux évolutions', 'Prova con due variazioni') + '</p><div class="ctrls"></div><div class="chain"></div><div class="cmp" aria-live="polite"></div>';
+    var ctrls = $('.ctrls', box), ch = $('.chain', box), cmp = $('.cmp', box);
+    ctrls.appendChild(stepper('s1', biUI('1<sup>re</sup> évolution', '1ª variazione'), t1, -50, 100, 5, function(v){ t1 = v; up(); }));
+    ctrls.appendChild(stepper('s2', biUI('2<sup>e</sup> évolution', '2ª variazione'), t2, -50, 100, 5, function(v){ t2 = v; up(); }));
+    function up(){
+      var c1 = 1 + t1 / 100, c2 = 1 + t2 / 100, c = c1 * c2, T = (c - 1) * 100, v1 = 100 * c1, v2 = v1 * c2;
+      drawChain(ch, { nodes: ['100', num(v1, 2), num(v2, 2)], ops: [TIMES + ' ' + num(c1, 2), TIMES + ' ' + num(c2, 2)],
+        tones: [t1 >= 0 ? 'up' : 'down', t2 >= 0 ? 'up' : 'down'], bottom: { op: TIMES + ' ' + num(c, 4), dir: 'fwd', tone: c >= 1 ? 'up' : 'down' } });
+      cmp.innerHTML = '<div class="good"><small>' + biUI('Juste : on multiplie', 'Giusto: si moltiplica') + '</small><span class="calc">' + num(c1, 2) + ' ' + TIMES + ' ' + num(c2, 2) + ' = ' + num(c, 4) + '</span><span class="big">' + sgn(T, 2) + NB + '%</span></div>' +
+        '<div class="bad"><small>' + biUI('Faux : on additionne', 'Sbagliato: si somma') + '</small><span class="calc">' + sgn(t1, 0) + ' ' + (t2 < 0 ? MI + ' ' + num(-t2, 0) : '+ ' + num(t2, 0)) + ' = ' + sgn(t1 + t2, 0) + '</span><span class="big">' + sgn(t1 + t2, 0) + NB + '%</span></div>';
+    }
+    up();
+  }
+
+  function labRecip(box){
+    var t = 20;
+    box.innerHTML = '<p class="lab-t">' + ICON_LAB + biUI('Aller et retour', 'Andata e ritorno') + '</p><div class="ctrls"></div><div class="chain"></div><div class="cmp" aria-live="polite"></div>';
+    var ctrls = $('.ctrls', box), ch = $('.chain', box), cmp = $('.cmp', box);
+    ctrls.appendChild(stepper('r1', biUI('Évolution de départ', 'Variazione iniziale'), t, -50, 100, 5, function(v){ t = v; up(); }));
+    function up(){
+      var c = 1 + t / 100, cr = 1 / c, tr = (cr - 1) * 100, ex = exact(tr, 1), v = 100 * c, opp = 1 - t / 100;
+      drawChain(ch, { nodes: ['100', num(v, 2)], ops: [TIMES + ' ' + num(c, 2)], tones: [t >= 0 ? 'up' : 'down'], bottom: { op: DIV + ' ' + num(c, 2), dir: 'back', tone: t >= 0 ? 'down' : 'up' } });
+      cmp.innerHTML = '<div class="good"><small>' + biUI('Juste : 1 ÷ C', 'Giusto: 1 ÷ C') + '</small><span class="calc">1 ' + DIV + ' ' + num(c, 2) + ' ' + (exact(cr, 3) ? '=' : APPROX) + ' ' + num(cr, 3) + '</span><span class="big">' + (ex ? '' : APPROX + NB) + sgn(tr, 1) + NB + '%</span></div>' +
+        '<div class="bad"><small>' + biUI('Faux : l’opposé', 'Sbagliato: l’opposto') + '</small><span class="calc">' + num(v, 2) + ' ' + TIMES + ' ' + num(opp, 2) + ' = ' + num(v * opp, 2) + (Math.abs(v * opp - 100) > 1e-9 ? ' ≠ 100' : '') + '</span><span class="big">' + sgn(-t, 0) + NB + '%</span></div>';
+    }
+    up();
+  }
+  $$('.lab[data-lab]').forEach(function(box){
+    var k = box.getAttribute('data-lab');
+    if (k === 'cm') labCM(box); else if (k === 'succ') labSucc(box); else if (k === 'recip') labRecip(box);
+  });
+
 
   /* Générateurs de questions */
-  function rnd(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
-  function pick(a){ return a[rnd(0, a.length - 1)]; }
-  function shuffle(a){ for (var i = a.length - 1; i > 0; i--){ var j = rnd(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function pc(n, d){ return num(n, d == null ? 2 : d) + ' %'; }
   function pcIt(n, d){ return num(n, d == null ? 2 : d) + '%'; }
   function cm(t){ return num(1 + t / 100, 4); }
@@ -119,30 +187,7 @@
     }
   };
 
-  /* Entraînement */
-  var trMode = 'mix', trQ = null, trOk = false;
-  var trCard = $('#tr-card');
-  function trStats(){ $('#tr-streak').textContent = store.tr.streak; $('#tr-best').textContent = store.tr.best; $('#tr-total').textContent = store.tr.total; }
-  function nextTraining(){
-    var m = trMode === 'mix' ? pick(['cm', 'succ', 'succ', 'recip', 'recip', 'init']) : trMode;
-    trQ = GEN[m](); trOk = false;
-    trCard.innerHTML = '<span class="qtype">' + biIn(trQ.type) + '</span><div class="qtext">' + bi(trQ.text) + '</div><div class="part tr-part"></div>' +
-      '<div class="tools"><button class="btn pri" type="button" id="tr-next">' + biUI('Nouvelle question', 'Nuova domanda') + ICON_NEXT + '</button></div>';
-    mountPart($('.tr-part', trCard), trQ.part, '?', {
-      id: 'tr-in',
-      onSolved: function(v, first){ if (first){ store.tr.streak++; store.tr.total++; if (store.tr.streak > store.tr.best) store.tr.best = store.tr.streak; } else { store.tr.total++; } trOk = true; save(); trStats(); if (first && store.tr.streak % 5 === 0) owlEvt('serie', store.tr.streak); },
-      onWrong: function(){ store.tr.streak = 0; save(); trStats(); },
-      onReveal: function(){ store.tr.streak = 0; save(); trStats(); $('.fbw', trCard).innerHTML = fbHTML('mid', MSG.seen); }
-    });
-    $('#tr-next').addEventListener('click', function(){ nextTraining(); trCard.scrollIntoView({ block: 'start' }); });
-  }
-  $$('#tr-modes .chip').forEach(function(c){
-    c.addEventListener('click', function(){ trMode = c.dataset.m; $$('#tr-modes .chip').forEach(function(x){ x.setAttribute('aria-pressed', String(x === c)); }); nextTraining(); });
-  });
-  trStats();
-
   /* Contrôle blanc : questions à choix */
-  function qcm(fr, it, opts, exp){ return { fr: fr, it: it, opts: opts, exp: exp }; }
   var TQ = [
     function(){
       var a, b; do { a = pick([10, 12, 14, 15, 20, 25, 30, 40]); b = pick([10, 12, 15, 20, 25, 30]); } while (a === b);
@@ -208,92 +253,38 @@
         { fr: num(c, 3) + ' − 1 = ' + (up ? '' : MI) + num(t / 100, 4) + ' : ' + (up ? 'augmentation' : 'diminution') + ' de ' + num(t) + ' %.', it: num(c, 3) + ' − 1 = ' + (up ? '' : MI) + num(t / 100, 4) + ': ' + (up ? 'aumento' : 'diminuzione') + ' ' + delIt(t) + '.' });
     }
   ];
-  var testBox = $('#test-box'), testQs = null, testDone = false;
-  function optKey(o){ return typeof o === 'string' ? o : o.fr; }
-  function makeTest(){
-    return shuffle(TQ.slice()).map(function(f){
-      var q, keys;
-      do { q = f(); keys = q.opts.map(optKey); } while (keys.some(function(k, i){ return keys.indexOf(k) !== i; }));
-      var good = q.opts[0];
-      q.list = shuffle(q.opts.slice());
-      q.ok = q.list.indexOf(good);
-      q.pick = -1;
-      return q;
-    });
-  }
-  function optHTML(o){ return typeof o === 'string' ? '<span class="ct">' + typo(o, true) + '</span>' : '<span class="ct">' + biIn(o) + '</span>'; }
-  function renderTest(){
-    var h = '';
-    testQs.forEach(function(q, i){
-      var qn = '<span class="qn">' + (i + 1) + '.</span> ';
-      h += '<div class="tq" data-i="' + i + '"><div class="qtext">' + bi({ fr: qn + q.fr, it: qn + q.it }) + '</div><div class="choices">' +
-        q.list.map(function(o, k){ return '<button class="choice" type="button" data-k="' + k + '" aria-pressed="false"><span class="k">' + 'abcd'.charAt(k) + '</span>' + optHTML(o) + '</button>'; }).join('') +
-        '</div><div class="fbw"></div></div>';
-    });
-    h += '<div class="tools"><button class="btn pri" type="button" id="test-go">' + biUI('Corriger', 'Correggi') + '</button><span class="note-s" id="test-count"></span></div><div id="test-res" aria-live="polite"></div>';
-    testBox.innerHTML = h;
-    $$('.tq', testBox).forEach(function(div){
-      var q = testQs[Number(div.dataset.i)];
-      $$('.choice', div).forEach(function(b){
-        b.addEventListener('click', function(){
-          if (testDone) return;
-          q.pick = Number(b.dataset.k);
-          $$('.choice', div).forEach(function(x){ var on = x === b; x.setAttribute('aria-pressed', String(on)); x.style.borderColor = on ? 'var(--brand)' : ''; x.style.background = on ? 'var(--brand-soft)' : ''; });
-          countTest();
-        });
-      });
-    });
-    $('#test-go').addEventListener('click', gradeTest);
-    countTest();
-  }
-  function countTest(){ var n = testQs.filter(function(q){ return q.pick >= 0; }).length; $('#test-count').innerHTML = biIn({ fr: n + ' / ' + testQs.length + ' réponses', it: n + ' / ' + testQs.length + ' risposte' }); }
-  function gradeTest(){
-    var score = 0;
-    testDone = true;
-    $$('.tq', testBox).forEach(function(div){
-      var q = testQs[Number(div.dataset.i)], good = q.pick === q.ok;
-      if (good) score += 2;
-      $$('.choice', div).forEach(function(x){
-        var k = Number(x.dataset.k);
-        x.disabled = true; x.style.borderColor = ''; x.style.background = '';
-        if (k === q.ok) x.classList.add('ok'); else if (k === q.pick) x.classList.add('ko');
-      });
-      $('.fbw', div).innerHTML = '<p class="fb ' + (good ? 'ok' : 'ko') + '">' + biIn(good ? { fr: 'Juste : +2 points.', it: 'Giusto: +2 punti.' } : q.pick < 0 ? { fr: 'Pas de réponse.', it: 'Nessuna risposta.' } : { fr: 'Faux.', it: 'Sbagliato.' }) + '</p><div class="panel">' + bi({ fr: '<p>' + q.exp.fr + '</p>', it: '<p>' + q.exp.it + '</p>' }) + '</div>';
-    });
-    if (store.bestTest == null || score > store.bestTest){ store.bestTest = score; save(); }
-    var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : { fr: 'Courage ! Relis le cours (parties 2, 3 et 4), puis recommence.', it: 'Coraggio! Rileggi la lezione (parti 2, 3 e 4), poi ricomincia.' };
-    $('#test-res').innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot" id="test-owl"></div><div class="bubble"><span class="fr">' + msg.fr + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri" type="button" id="test-new">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
-    $('#test-go').disabled = true;
-    $('#test-new').addEventListener('click', function(){ newTest(); window.scrollTo(0, 0); });
-    showBest(); owlEvt('note', score);
-    $('#test-res').scrollIntoView({ block: 'center' });
-  }
-  function showBest(){ $('#test-best').innerHTML = store.bestTest == null ? '' : biIn({ fr: 'Ton meilleur score : ' + store.bestTest + ' / 20', it: 'Il tuo record: ' + store.bestTest + ' / 20' }); }
-  function newTest(){ testQs = makeTest(); testDone = false; renderTest(); showBest(); }
 
-  /* Tableau de bord de l'accueil */
-  function homeProg(){
-    var box = $('#home-prog');
-    if (!box) return;
-    var d = EX.filter(isDone).length;
-    box.innerHTML =
-      '<a href="#exercices"><b>' + d + '<small>/' + EX.length + '</small></b><span class="fr">exercices</span><span class="it">esercizi</span></a>' +
-      '<a href="#entrainement"><b>' + store.tr.best + '</b><span class="fr">meilleure série</span><span class="it">miglior serie</span></a>' +
-      '<a href="#controle"><b>' + (store.bestTest == null ? MI : store.bestTest) + '<small>/20</small></b><span class="fr">meilleur contrôle</span><span class="it">miglior verifica</span></a>';
-  }
-
-  /* Navigation par onglets */
-  var VIEWS = ['cours', 'exercices', 'entrainement', 'controle'];
-  function route(){
-    var v = (location.hash || '').replace('#', '');
-    if (VIEWS.indexOf(v) < 0) v = 'cours';
-    VIEWS.forEach(function(k){ document.getElementById('v-' + k).hidden = k !== v; });
-    $$('.tab').forEach(function(t){ if (t.dataset.v === v) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
-    if (v === 'entrainement' && !trQ) nextTraining();
-    if (v === 'controle' && !testQs) newTest();
-    if (v === 'cours') homeProg();
-    window.scrollTo(0, 0);
-  }
-  window.addEventListener('hashchange', route);
-  setLang(store.lang);
-  route();
+  CHAPS.push({
+    id: 'c10', num: 10, root: true,
+    title: { fr: 'Information chiffrée', it: 'Informazione numerica' },
+    short: { fr: 'Évolutions %', it: 'Variazioni %' },
+    sub: { fr: 'Évolutions successives, taux global, évolutions réciproques', it: 'Variazioni successive, tasso globale, variazioni reciproche' },
+    groups: [
+      { k: 'rappels', fr: 'Rappels : taux et coefficients', it: 'Ripasso: tassi e coefficienti', chip: { fr: 'Rappels', it: 'Ripasso' } },
+      { k: 'succ', fr: 'Évolutions successives', it: 'Variazioni successive', chip: { fr: 'Successives', it: 'Successive' } },
+      { k: 'recip', fr: 'Évolutions réciproques', it: 'Variazioni reciproche', chip: { fr: 'Réciproques', it: 'Reciproche' } },
+      { k: 'synth', fr: 'Problèmes de synthèse', it: 'Problemi di sintesi', chip: { fr: 'Synthèse', it: 'Sintesi' } }
+    ],
+    order: ['ex146', 'ex147', 'ex148', 'cap4', 'ex115', 'ex116', 'ex117', 'ex118', 'ex119', 'ex120', 'ex121', 'ex122', 'ex123', 'ex124', 'ex125', 'ex126', 'ex151', 'ex152',
+      'cap5', 'ex150', 'ex127', 'ex128', 'ex129', 'ex130', 'ex131', 'ex132', 'ex133', 'ex134', 'ex154', 'ex135', 'ex137', 'ex140', 'ex153', 'ex158'],
+    exLead: {
+      fr: 'Les énoncés du manuel, traduits. Écris ta réponse, puis touche « Vérifier ». Si tu bloques : l’indice, puis la solution commentée.',
+      it: 'I testi del libro, tradotti. Scrivi la risposta e tocca «Vérifier». Se ti blocchi: l’indizio, poi la soluzione spiegata.'
+    },
+    modes: [
+      { k: 'cm', fr: 'Coefficients', it: 'Coefficienti' },
+      { k: 'succ', fr: 'Taux global', it: 'Tasso globale' },
+      { k: 'recip', fr: 'Taux réciproque', it: 'Tasso reciproco' },
+      { k: 'init', fr: 'Valeur de départ', it: 'Valore iniziale' }
+    ],
+    mix: ['cm', 'succ', 'succ', 'recip', 'recip', 'init'],
+    gen: GEN, tq: TQ,
+    low: { fr: 'Courage ! Relis le cours (parties 2, 3 et 4), puis recommence.', it: 'Coraggio! Rileggi la lezione (parti 2, 3 e 4), poi ricomincia.' },
+    dit: [
+      ['Un pourcentage, c’est une multiplication cachée.', 'Una percentuale è una moltiplicazione nascosta.'],
+      ['On n’additionne pas les taux : on multiplie les coefficients.', 'I tassi non si sommano: si moltiplicano i coefficienti.'],
+      ['Pour revenir en arrière, on divise par le coefficient.', 'Per tornare indietro, si divide per il coefficiente.'],
+      ['+20 % puis −20 %, ça ne fait pas 0 % !', '+20 % poi −20 % non fa 0 %!']
+    ]
+  });
+  })();

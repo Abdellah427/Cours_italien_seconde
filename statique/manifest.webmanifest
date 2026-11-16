@@ -1,6 +1,6 @@
 {
- "name": "Évolutions % avec Hector",
- "short_name": "Évolutions %",
+ "name": "SCOLAIR : maths de Seconde avec Hector",
+ "short_name": "SCOLAIR",
  "lang": "fr",
  "start_url": "./",
  "scope": "./",
@@ -19,5 +19,6 @@
    "type": "image/png",
    "purpose": "any maskable"
   }
- ]
+ ],
+ "description": "Cours en français et en italien, exercices du livre corrigés, entraînement et contrôle blanc."
 }
