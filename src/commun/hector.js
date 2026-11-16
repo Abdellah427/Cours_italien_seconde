@@ -19,7 +19,7 @@
       else if (kind === 'exo') owlTop.anim('danse');
       else if (kind === 'serie'){
         owlTop.anim('fierte');
-        owlTop.speak('<span class="fr">' + n + ' de suite, bravo !</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });
+        owlTop.speak('<span class="fr">' + typo(n + ' de suite, bravo !', true) + '</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });
         if (n % 10 === 0) HK.confetti();
       }
     } catch (e) {}
@@ -34,6 +34,7 @@
     if (!HK || !HK.phrases) return;
     var list = DIT.slice();
     (c ? [c] : CHAPS).forEach(function(x){ list = list.concat(x.dit || []); });
+    list = list.map(function(d){ return [typo(d[0], true), d[1]]; });
     HK.phrases(list);
   }
   (function(){
@@ -42,7 +43,7 @@
     if (home && HK){
       var c = document.createElement('div');
       c.className = 'coach'; c.setAttribute('data-owl-host', '');
-      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
+      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">' + typo('Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.', true) + '</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
       home.appendChild(c);
       var o = mkOwl($('.owl-slot', c), {});
       if (o) setTimeout(function(){ try { o.anim('salut'); } catch (e) {} }, 500);

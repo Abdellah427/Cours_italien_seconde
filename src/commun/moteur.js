@@ -201,7 +201,7 @@
       });
       if (st.bestTest == null || score > st.bestTest){ st.bestTest = score; save(); }
       var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : c.low;
-      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + msg.fr + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
+      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(msg.fr, true) + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
       $('.test-go', testBox).disabled = true;
       $('.test-new', testBox).addEventListener('click', function(){ newTest(); window.scrollTo(0, 0); });
       showBest(); owlEvt('note', score, $('.test-owl', testBox));
@@ -311,7 +311,7 @@
     var r = $('#home-resume'), l = store.last;
     if (l && CH[l.ch] && VIEWS.indexOf(l.v) >= 0){
       var c = CH[l.ch].c;
-      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span><span class="fr">Reprendre : ' + c.short.fr + ', ' + VNAME[l.v].fr + '</span><span class="it">Riprendi: ' + c.short.it + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
+      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + c.short.fr + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + c.short.it + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
     } else r.innerHTML = '';
   }
 

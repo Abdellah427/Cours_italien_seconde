@@ -8312,7 +8312,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       });
       if (st.bestTest == null || score > st.bestTest){ st.bestTest = score; save(); }
       var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : c.low;
-      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + msg.fr + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
+      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(msg.fr, true) + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
       $('.test-go', testBox).disabled = true;
       $('.test-new', testBox).addEventListener('click', function(){ newTest(); window.scrollTo(0, 0); });
       showBest(); owlEvt('note', score, $('.test-owl', testBox));
@@ -8422,7 +8422,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     var r = $('#home-resume'), l = store.last;
     if (l && CH[l.ch] && VIEWS.indexOf(l.v) >= 0){
       var c = CH[l.ch].c;
-      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span><span class="fr">Reprendre : ' + c.short.fr + ', ' + VNAME[l.v].fr + '</span><span class="it">Riprendi: ' + c.short.it + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
+      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + c.short.fr + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + c.short.it + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
     } else r.innerHTML = '';
   }
 
@@ -8520,7 +8520,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       else if (kind === 'exo') owlTop.anim('danse');
       else if (kind === 'serie'){
         owlTop.anim('fierte');
-        owlTop.speak('<span class="fr">' + n + ' de suite, bravo !</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });
+        owlTop.speak('<span class="fr">' + typo(n + ' de suite, bravo !', true) + '</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });
         if (n % 10 === 0) HK.confetti();
       }
     } catch (e) {}
@@ -8535,6 +8535,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     if (!HK || !HK.phrases) return;
     var list = DIT.slice();
     (c ? [c] : CHAPS).forEach(function(x){ list = list.concat(x.dit || []); });
+    list = list.map(function(d){ return [typo(d[0], true), d[1]]; });
     HK.phrases(list);
   }
   (function(){
@@ -8543,7 +8544,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     if (home && HK){
       var c = document.createElement('div');
       c.className = 'coach'; c.setAttribute('data-owl-host', '');
-      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
+      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">' + typo('Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.', true) + '</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
       home.appendChild(c);
       var o = mkOwl($('.owl-slot', c), {});
       if (o) setTimeout(function(){ try { o.anim('salut'); } catch (e) {} }, 500);
@@ -8558,7 +8559,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
 <script>
 // Version installable : hors ligne grâce au service worker ; au retour dans l'appli, on recharge si une version plus récente est en ligne.
 (function(){
-  var V = "6e1b0e5264", dernier = 0, sw = navigator.serviceWorker;
+  var V = "e9663afb47", dernier = 0, sw = navigator.serviceWorker;
   var POLICES = ['400 1em "Atkinson Hyperlegible"', '700 1em "Atkinson Hyperlegible"', 'italic 400 1em "Atkinson Hyperlegible"', '500 1em Fredoka', '600 1em Fredoka', '700 1em Fredoka',
     '400 1em "STIX Two Text"', '600 1em "STIX Two Text"', 'italic 400 1em "STIX Two Text"'];
   /* Hors ligne complet dès la première visite : le service worker garde les polices déjà chargées par la page, puis on demande les autres. */
