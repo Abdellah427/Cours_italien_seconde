@@ -841,9 +841,9 @@ html[data-lang="both"] figcaption .it{display:block;color:var(--owl-dark);margin
 .bilan .go{font-size:.88rem;white-space:nowrap;padding:12px 2px 12px 8px}
 
 /* En mode FR·IT, dans les tableaux, les listes de renvois et le bilan : l'italien passe à la ligne au lieu de suivre le français */
-html[data-lang="both"] .tb td > .it.inl:last-child,html[data-lang="both"] .tb th > .it.inl:last-child,html[data-lang="both"] .gloss th > .it.inl:last-child,
+html[data-lang="both"] .tb td > .it.inl:nth-child(2):last-child,html[data-lang="both"] .tb th > .it.inl:nth-child(2):last-child,html[data-lang="both"] .gloss th > .it.inl:nth-child(2):last-child,
 html[data-lang="both"] .bilan label .it.inl,html[data-lang="both"] .go-b .it.inl,html[data-lang="both"] .lesson details > summary .it.inl{display:block}
-html[data-lang="both"] .tb td > .it.inl:last-child::before,html[data-lang="both"] .tb th > .it.inl:last-child::before,html[data-lang="both"] .gloss th > .it.inl:last-child::before,
+html[data-lang="both"] .tb td > .it.inl:nth-child(2):last-child::before,html[data-lang="both"] .tb th > .it.inl:nth-child(2):last-child::before,html[data-lang="both"] .gloss th > .it.inl:nth-child(2):last-child::before,
 html[data-lang="both"] .bilan label .it.inl::before,html[data-lang="both"] .go-b .it.inl::before,html[data-lang="both"] .lesson details > summary .it.inl::before{content:none}
 html[data-lang="both"] .go-b .it.inl{font-size:.9em}
 html[data-lang="both"] p.it.small,html[data-lang="both"] li.it.small{font-size:.86rem}
@@ -8559,7 +8559,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
 <script>
 // Version installable : hors ligne grâce au service worker ; au retour dans l'appli, on recharge si une version plus récente est en ligne.
 (function(){
-  var V = "e9663afb47", dernier = 0, sw = navigator.serviceWorker;
+  var V = "b0aa756df2", dernier = 0, sw = navigator.serviceWorker;
   var POLICES = ['400 1em "Atkinson Hyperlegible"', '700 1em "Atkinson Hyperlegible"', 'italic 400 1em "Atkinson Hyperlegible"', '500 1em Fredoka', '600 1em Fredoka', '700 1em Fredoka',
     '400 1em "STIX Two Text"', '600 1em "STIX Two Text"', 'italic 400 1em "STIX Two Text"'];
   /* Hors ligne complet dès la première visite : le service worker garde les polices déjà chargées par la page, puis on demande les autres. */
