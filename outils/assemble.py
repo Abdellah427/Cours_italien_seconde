@@ -36,14 +36,16 @@ page = tete + '<style>\n' + css + '</style>\n</head>\n<body>\n' + corps + '\n<sc
 os.makedirs(os.path.join(R, 'autonome'), exist_ok=True)
 open(os.path.join(R, 'autonome', 'scolair-maths-seconde.html'), 'w', encoding='utf-8').write(page)
 # Version installable : manifeste, icônes, service worker, numéro de version
-version = hashlib.sha1(page.encode()).hexdigest()[:10]
+# Le numéro de version change dès que quelque chose change dans ce qui est servi : la page, le script de mise à jour, le service worker.
+statique = os.path.join(R, 'statique')
+version = hashlib.sha1((page + r('commun', 'maj.js') + open(os.path.join(statique, 'sw.js'), encoding='utf-8').read()).encode()).hexdigest()[:10]
 tete_pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="icon-180.png">\n<link rel="icon" href="icon-192.png">\n'
             '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">\n'
             '<meta name="apple-mobile-web-app-status-bar-style" content="default">\n<meta name="apple-mobile-web-app-title" content="SCOLAIR">\n')
 pwa = page.replace('<style>\n', tete_pwa + '<style>\n', 1).replace('</body>', '<script>\n' + r('commun', 'maj.js').replace('__V__', version) + '</script>\n</body>')
 docs = os.path.join(R, 'docs')
 os.makedirs(docs, exist_ok=True)
-for f in os.listdir(os.path.join(R, 'statique')): shutil.copy(os.path.join(R, 'statique', f), os.path.join(docs, f))
+for f in os.listdir(statique): shutil.copy(os.path.join(statique, f), os.path.join(docs, f))
 open(os.path.join(docs, 'index.html'), 'w', encoding='utf-8').write(pwa)
 open(os.path.join(docs, 'version.json'), 'w', encoding='utf-8').write('{"v":"' + version + '"}\n')
 open(os.path.join(docs, '.nojekyll'), 'w').write('')

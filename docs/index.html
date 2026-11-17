@@ -8784,14 +8784,23 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
 <script>
 // Version installable : hors ligne grâce au service worker ; au retour dans l'appli, on recharge si une version plus récente est en ligne.
 (function(){
-  var V = "777d4e2d61", dernier = 0, sw = navigator.serviceWorker;
+  var V = "eda42345cc", dernier = 0, sw = navigator.serviceWorker;
   var POLICES = ['400 1em "Atkinson Hyperlegible"', '700 1em "Atkinson Hyperlegible"', 'italic 400 1em "Atkinson Hyperlegible"', '500 1em Fredoka', '600 1em Fredoka', '700 1em Fredoka',
     '400 1em "STIX Two Text"', '600 1em "STIX Two Text"', 'italic 400 1em "STIX Two Text"'];
-  /* Hors ligne complet dès la première visite : le service worker garde les polices déjà chargées par la page, puis on demande les autres. */
+  /* Hors ligne complet dès la première visite. La page charge ses polices avant que le service worker soit actif : il ne les a
+     donc pas vues passer. On relit la feuille de style des polices et on lui confie les fichiers des alphabets utilisés
+     (latin, et grec pour π), puis on demande les variantes pas encore chargées (italique, demi-gras). */
   function gardePolices(reg){
     try {
-      var deja = performance.getEntriesByType("resource").map(function(e){ return e.name; }).filter(function(u){ return /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(u); });
-      if (reg.active && deja.length) reg.active.postMessage({ garder: deja });
+      var lien = document.querySelector('link[rel="stylesheet"][href*="fonts.googleapis.com/css"]');
+      if (lien && window.fetch) fetch(lien.href).then(function(r){ return r.ok ? r.text() : ""; }).then(function(css){
+        var urls = [lien.href];
+        css.split("@font-face").forEach(function(b){
+          var u = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/.exec(b), r = /unicode-range:\s*([^;}]+)/.exec(b);
+          if (u && (!r || /U\+0000-00FF|U\+0370-/i.test(r[1])) && urls.indexOf(u[1]) < 0) urls.push(u[1]);
+        });
+        if (reg.active) reg.active.postMessage({ garder: urls });
+      }).catch(function(){});
       if (document.fonts && document.fonts.load) POLICES.forEach(function(f){ document.fonts.load(f, "Aé x 2 × − ÷ √ ≤ ≥ ≠ ∞ ∈ ⇔ π").catch(function(){}); });
     } catch (e) {}
   }

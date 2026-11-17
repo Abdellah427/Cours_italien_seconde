@@ -12,7 +12,7 @@ self.addEventListener("fetch", (e) => {
     }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || (e.request.mode === "navigate" ? caches.match("./") : Response.error())))
   );
 });
-// La page signale les polices qu'elle a chargées avant que le service worker soit actif : on les garde aussi.
+// La page donne la liste des fichiers de police dont elle a besoin (chargés avant que le service worker soit actif) : on les garde aussi.
 self.addEventListener("message", (e) => {
   const urls = e.data && e.data.garder;
   if (!Array.isArray(urls)) return;
