@@ -167,6 +167,8 @@ html[data-lang="both"] .selfhow .it{display:block;font-weight:400;margin-top:2px
   .tb.fx .fl{display:block;margin-top:6px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
   .tb.fx td .m{font-size:1.27em}
   .tb.fx td.items .item{margin:4px 0 8px}
+  .view.pg .tb.fx tr{margin:4px 0;padding:8px 12px 4px}
+  .view.pg .tb.fx .fl{margin-top:4px}
 }
 .tb.fx .fl{display:none}
 @media (max-width:520px){ .tb.fx .fl{display:block} }

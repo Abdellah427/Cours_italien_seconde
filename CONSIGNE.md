@@ -41,9 +41,16 @@ L'écran est étroit et l'élève lit lentement : la forme compte autant que le 
 - Une remarque sur un calcul se place sous l'étape qu'elle explique, en petit.
 - Les tableaux de règles (nom, règle, exemple) deviennent des fiches sur téléphone (`class="tb fx"`).
 - Aucun bloc à faire défiler de gauche à droite.
-- **Le cours se lit page par page, sans faire défiler l'écran.** `moteur.js` découpe chaque partie en pages à la hauteur du téléphone : en haut, une barre se remplit ; en bas, Précédent et Suivant (on peut aussi glisser le doigt). Le découpage est automatique : il suffit d'écrire le cours comme d'habitude, en petits blocs (un encadré par idée, des paragraphes courts, les deux langues l'une après l'autre). Un bloc d'un seul tenant plus haut que l'écran (un très long paragraphe, une grande figure) oblige à faire défiler : le test le signale.
+- **Tout se lit page par page, sans faire défiler l'écran** : en haut, une barre se remplit ; en bas, Précédent et Suivant (on peut aussi glisser le doigt). `moteur.js` découpe lui-même en pages à la hauteur du téléphone :
+  - le cours : chaque partie en pages ;
+  - les exercices : l'exercice touché dans la liste prend tout l'écran (les onglets s'effacent, la flèche du haut ramène à la liste), son numéro et son titre en haut ; l'énoncé d'abord, puis une question par page ; une solution affichée continue sur les pages suivantes ; le bouton « Énoncé » fait réapparaître l'énoncé au-dessus d'une question ;
+  - le contrôle blanc : la consigne, une question par page, une page « Corriger » qui montre les questions sans réponse, puis la note et les corrections ; un numéro touché mène à sa question ;
+  - l'entraînement : une question à l'écran ; la barre du haut se remplit en cinq bonnes réponses de suite ; la série et « Nouvelle question » restent en bas.
 
-`outils/teste.py` contrôle tout cela dans les trois modes de langue : signes « = » alignés, aucune formule coupée, aucune formule plus large que son bloc, aucun tableau ni calcul qui défile. Il tourne aussi toutes les pages du cours : aucune page à faire défiler, aucune page vide, tout le contenu affiché une fois et une seule, la reprise à la bonne page.
+  Il suffit d'écrire comme d'habitude, en petits blocs (un encadré par idée, des paragraphes courts, les deux langues l'une après l'autre, des énoncés et des questions brefs). Un bloc d'un seul tenant plus haut que l'écran (un très long paragraphe, une grande figure) oblige à faire défiler : le test le signale.
+- Pas de grand titre ni de texte d'introduction en haut des vues : l'onglet dit déjà où l'on est, et la place sert au contenu.
+
+`outils/teste.py` contrôle tout cela dans les trois modes de langue : signes « = » alignés, aucune formule coupée, aucune formule plus large que son bloc, aucun tableau ni calcul qui défile. Il tourne aussi toutes les pages, avec les marges d'un iPhone 13 : celles du cours, de chaque exercice (tel qu'on l'ouvre, puis solutions affichées) et d'un contrôle blanc complet. Aucune page à faire défiler, aucune page vide, tout le contenu affiché une fois et une seule, la reprise à la bonne page. À l'entraînement, chaque question doit tenir au-dessus du bouton du bas.
 
 ## Première mise en ligne (une seule fois)
 

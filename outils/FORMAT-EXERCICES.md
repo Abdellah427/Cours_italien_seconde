@@ -12,6 +12,11 @@ L'élève travaille sans le manuel : à l'écran, rien ne renvoie au livre (pas 
 du livre, pas de « du manuel »). L'application numérote les exercices elle-même, dans l'ordre de la liste. Les
 champs `num` et `page` gardent seulement la trace de l'origine de l'exercice ; ils ne sont pas affichés.
 
+À l'écran, un exercice se lit en pages, sans rien faire défiler : l'énoncé (`text`) d'abord, puis une question
+(`parts`) par page ; la solution, quand on l'affiche, continue sur les pages suivantes. Écrire donc des énoncés
+en paragraphes courts et des questions brèves : un bloc d'un seul tenant plus haut que l'écran oblige à faire
+défiler (le test le signale).
+
 Origine du chapitre 10 : p. 302 et 303 (cours, solutions commentées), p. 311 à 313 (exercices 115 à 140),
 p. 314 à 316 (l’essentiel, exercices 141 à 158).
 

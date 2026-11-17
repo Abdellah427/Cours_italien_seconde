@@ -18,6 +18,27 @@
   function chip(attr, k, label, on){ return '<button class="chip" type="button" data-' + attr + '="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '"><span class="fr">' + label.fr + '</span><span class="it">' + label.it + '</span></button>'; }
   function press(list, on){ list.forEach(function(x){ x.setAttribute('aria-pressed', String(x === on)); }); }
 
+  /* Vues en pages : la barre qui se remplit en haut, les boutons Précédent / Suivant en bas */
+  function pgBar(){ return '<div class="pgbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div>'; }
+  function pgNavHTML(){
+    return '<div class="pgnav-in"><button class="btn pg-prev" type="button">' + ICON_PREV + biUI('Précédent', 'Indietro') + '</button><span class="pg-count" aria-live="polite"></span>' +
+      '<button class="btn pri pg-next" type="button"><span class="pg-next-t"></span>' + ICON_NEXT + '</button></div>';
+  }
+  function setBar(head, pct){ var b = $('.pgbar', head); $('i', b).style.width = pct + '%'; b.setAttribute('aria-valuenow', Math.round(pct)); }
+  /* Glisser le doigt vers la gauche ou la droite tourne la page (sauf sur une zone qui défile elle-même de côté, ou dans un champ) */
+  function glisser(view, tourne){
+    var g = null;
+    function deCote(el){ for (; el && el !== view; el = el.parentNode) if (el.scrollWidth > el.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return true; return false; }
+    view.addEventListener('touchstart', function(ev){ var p = ev.touches[0]; g = ev.touches.length === 1 ? { x: p.clientX, y: p.clientY, t: Date.now(), el: ev.target } : null; }, { passive: true });
+    view.addEventListener('touchend', function(ev){
+      if (!g) return;
+      var p = ev.changedTouches[0], dx = p.clientX - g.x, dy = p.clientY - g.y, d = g;
+      g = null;
+      if (Date.now() - d.t > 700 || Math.abs(dx) < 64 || Math.abs(dx) < 2.2 * Math.abs(dy) || /^(INPUT|TEXTAREA|SELECT)$/.test(d.el.tagName) || deCote(d.el)) return;
+      tourne(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  }
+
   function makeChapter(c){
     var st = chst(c), groups = c.groups;
     var EX = EX_ALL.filter(function(e){ return e.ch === c.id; });
@@ -31,7 +52,165 @@
       '<div class="summary"><div class="row"><span class="ui"><span class="fr">Exercices réussis</span><span class="it">Esercizi risolti</span></span><span class="big ex-count">0 / 0</span></div><div class="prog"><i class="ex-bar"></i></div></div>' +
       '<div class="chips ui ex-filter" role="group" aria-label="Filtre">' + chip('f', 'all', { fr: 'Tous', it: 'Tutti' }, true) +
       groups.map(function(g){ return chip('f', g.k, g.chip || g); }).join('') + chip('f', 'todo', { fr: 'À faire', it: 'Da fare' }) + '</div><div class="ex-list"></div>');
-    var listEl = $('.ex-list', vEx), filter = 'all', opened = {}, listed = false;
+    var listEl = $('.ex-list', vEx), filter = 'all', opened = {}, listed = false, focus = null, liste = [];
+    vEx.classList.add('serre');
+    /* Un exercice ouvert prend la place de la liste et se lit en pages, comme le cours : l'énoncé, puis une question par page.
+       En haut, sa place dans la série ; en bas, Précédent / Suivant. */
+    var exHead = document.createElement('div'), exNav = document.createElement('div');
+    var XL = null, xPage = 0, xQ = [], xS = [];      /* l'exercice ouvert : ses pages, la page affichée, l'unité de chaque question et de chaque solution */
+    exHead.className = 'pghead exhead ui'; exHead.hidden = true;
+    exHead.innerHTML = '<div class="exhead-r"><button class="btn sm ex-back" type="button" aria-label="Liste des exercices / Lista degli esercizi">' + ICON_PREV + '</button>' +
+      '<span class="exo-n ex-num"></span><span class="ex-where"></span>' +
+      '<button class="btn sm stmt-b" type="button" aria-expanded="false" hidden>' + ICON_DOC + biUI('Énoncé', 'Testo') + '</button></div>' + pgBar();
+    vEx.insertBefore(exHead, vEx.firstChild);
+    exNav.className = 'pgnav ui'; exNav.hidden = true; exNav.innerHTML = pgNavHTML();
+    vEx.appendChild(exNav);
+    function parId(id){ for (var n = 0; n < EX.length; n++) if (EX[n].id === id) return EX[n]; return null; }
+    /* La série en cours : les exercices de la liste affichée, dans l'ordre */
+    function rang(){ for (var n = 0; n < liste.length; n++) if (liste[n].id === focus) return n; return -1; }
+    function aFaire(e){ for (var j = 0; j < e.parts.length; j++) if (!store.solved[pk(e, j)]) return j; return 0; }      /* la première question pas encore réussie */
+    function ouvrir(e, on){
+      var art = document.getElementById('x-' + e.id);
+      if (on) opened[e.id] = true; else delete opened[e.id];
+      if (!art) return;
+      var body = $('.exo-b', art);
+      if (on && !body.firstChild) renderBody(e, body);
+      body.hidden = !on;
+      $('.exo-h', art).setAttribute('aria-expanded', String(on));
+      art.classList.toggle('open', on);
+      if (!on) $$('.pg-off', body).forEach(function(x){ x.classList.remove('pg-off'); });
+    }
+    /* Les unités de l'exercice ouvert : l'énoncé (découpé comme le cours), chaque question d'un seul bloc, et la solution quand elle est affichée.
+       Une question à réponse écrite nettement plus haute que l'écran se lit en deux temps : son texte, puis la réponse. */
+    function exoUnits(e){
+      var art = document.getElementById('x-' + e.id), body = $('.exo-b', art), u = [], H;
+      xQ = []; xS = [];
+      $$('.pg-off', body).forEach(function(x){ x.classList.remove('pg-off'); });
+      H = budget(art);
+      function hauteur(el, sp){      /* la carte quand elle ne montre que cette question */
+        var autres = [].filter.call(body.children, function(x){ return x !== el; }).concat(sp ? [sp] : []), h;
+        autres.forEach(function(x){ x.classList.add('pg-off'); });
+        h = art.offsetHeight;
+        autres.forEach(function(x){ x.classList.remove('pg-off'); });
+        return h;
+      }
+      function tropHaute(el, sp){
+        var h;
+        el.classList.remove('juste');
+        h = hauteur(el, sp);
+        if (h > H){ el.classList.add('juste'); h = hauteur(el, sp); }      /* trop haute : elle se resserre, et souvent elle tient */
+        return h > H;
+      }
+      [].forEach.call(body.children, function(el){
+        var k = el.classList;
+        if (k.contains('btag')) return;
+        if (k.contains('stmt')){ unitsOf(el, [el]).forEach(function(x){ x.enonce = true; u.push(x); }); return; }
+        if (!k.contains('part')){ u.push({ els: [el], anc: [], enonce: true }); return; }      /* le schéma de l'énoncé */
+        var j = Number(el.dataset.j), sp = $('.panel.sol', el), pq = $('.pq', el), kids = [].filter.call(el.children, function(x){ return x !== sp; }), n;
+        xQ[j] = u.length;
+        if (tropHaute(el, sp) && pq && !$('.choices', el)){      /* pas un choix : les réponses se lisent avec la question */
+          n = kids.indexOf(pq) + 1;
+          u.push({ els: kids.slice(0, n), anc: [el], entier: true, brk: j > 0 });
+          u.push({ els: kids.slice(n), anc: [el], entier: true });
+        } else u.push({ els: kids, anc: [el], entier: true, brk: j > 0 });      /* une question par page */
+        if (sp && !sp.hidden){ xS[j] = u.length; u = u.concat(unitsOf(sp, [el, sp])); }
+      });
+      u.forEach(function(x, n){
+        x.id = n; x.brk = !!x.brk; x.tete = false; x.on = true;
+        x.keep = !x.entier && /[:：]\s*$/.test(x.els[0].textContent);      /* une phrase qui annonce la suite ne reste pas seule en bas de page */
+        x.anc.forEach(function(a){ a._pg = 0; });
+      });
+      u.forEach(function(x){ x.anc.forEach(function(a){ a._pg++; }); });
+      XL = { el: art, base: u, units: u, pages: null, key: '' };
+    }
+    function majFocus(){
+      var k = rang();
+      if (k < 0 || !XL || !XL.pages) return;
+      var e = liste[k], num = $('.ex-num', exHead), fin = k === liste.length - 1 && xPage === XL.pages.length - 1;
+      /* en haut : le numéro (vert quand l'exercice est réussi) et le titre de l'exercice */
+      num.textContent = e.n; num.className = 'exo-n ex-num' + (e.plus ? ' plus' : '') + (isDone(e) ? ' done' : '');
+      $('.ex-where', exHead).innerHTML = '<span class="fr">' + typo(e.title.fr, true) + '</span><span class="it">' + typo(e.title.it, false) + '</span>';
+      setBar(exHead, (k + (xPage + 1) / XL.pages.length) / liste.length * 100);      /* la barre avance d'un cran à chaque page de l'exercice */
+      $('.pg-count', exNav).textContent = (k + 1) + ' / ' + liste.length;
+      $('.pg-prev', exNav).disabled = k === 0 && xPage === 0;
+      $('.pg-next-t', exNav).innerHTML = fin ? biUI('Liste', 'Lista') : biUI('Suivant', 'Avanti');
+    }
+    function showX(k){
+      if (!XL || vEx.hidden) return;
+      if (!XL.pages || XL.key !== pgKey(XL)) paginate(XL);
+      xPage = k = Math.max(0, Math.min(XL.pages.length - 1, k));
+      var ici = XL.pages[k], sb = $('.stmt-b', exHead);
+      XL.units.forEach(function(u, n){ vis(XL, n, ici.indexOf(n) >= 0); });
+      /* « Énoncé » : sur une page de question où l'énoncé n'est pas en entier, un bouton le fait réapparaître au-dessus */
+      sb.hidden = !ici.some(function(n){ return !XL.units[n].enonce; }) || XL.units.every(function(u, n){ return !u.enonce || ici.indexOf(n) >= 0; });
+      sb.setAttribute('aria-expanded', 'false');
+      majFocus();
+    }
+    function enonce(){
+      var sb = $('.stmt-b', exHead), on = sb.getAttribute('aria-expanded') !== 'true';
+      if (!XL || !XL.pages) return;
+      XL.units.forEach(function(u, n){ if (u.enonce && XL.pages[xPage].indexOf(n) < 0) vis(XL, n, on); });
+      sb.setAttribute('aria-expanded', String(on));
+      if (on) window.scrollTo(0, 0);
+    }
+    $('.stmt-b', exHead).addEventListener('click', enonce);
+    /* Ouvre un exercice (les autres disparaissent de l'écran). où : rien = à la première question pas encore réussie ; 'debut' ; 'fin'.
+       Sans identifiant : retour à la liste, à l'endroit de l'exercice quitté. */
+    function plein(){ document.documentElement.classList.toggle('plein', !!focus && !vEx.hidden); }      /* les onglets s'effacent : toute la hauteur pour l'exercice */
+    function setFocus(id, ou){
+      var avant = focus, e = id ? parId(id) : null, j;
+      if (avant && (!e || avant !== e.id) && parId(avant)) ouvrir(parId(avant), false);
+      focus = e ? e.id : null;
+      vEx.classList.toggle('one', !!focus);
+      exHead.hidden = exNav.hidden = !focus;
+      plein();
+      if (e){
+        ouvrir(e, true); XL = null;
+        if (vEx.hidden) return;                                   /* les pages se mesurent : il faut que la vue soit affichée */
+        exoUnits(e); paginate(XL); j = aFaire(e);
+        showX(ou === 'fin' ? XL.pages.length - 1 : ou === 'debut' || j === 0 ? 0 : pageOf(XL, xQ[j]));
+        window.scrollTo(0, 0);
+      } else {
+        XL = null;
+        if (avant){ var a = document.getElementById('x-' + avant); if (a) a.scrollIntoView({ block: 'center' }); }
+      }
+    }
+    function pas(d){
+      if (!focus || !XL || !XL.pages) return;
+      if (xPage + d >= 0 && xPage + d < XL.pages.length){ showX(xPage + d); window.scrollTo(0, 0); return; }
+      var o = liste[rang() + d];
+      if (o) setFocus(o.id, d > 0 ? 'debut' : 'fin'); else if (d > 0) setFocus(null);
+    }
+    /* Après un nouveau découpage (langue, polices, rotation de l'écran), on reste au même endroit : la page de ce qu'on vient de toucher
+       (un bouton, un champ) s'il est encore à l'écran, sinon celle du premier bloc affiché */
+    var xAncre = null;
+    vEx.addEventListener('click', function(ev){ xAncre = ev.target; }, true);
+    function refocus(){
+      var e = parId(focus), el, n, id = 0, ouvert = $('.stmt-b', exHead).getAttribute('aria-expanded') === 'true';
+      if (!e || !XL || !XL.pages || vEx.hidden) return;
+      el = xAncre && XL.el.contains(xAncre) && xAncre.getClientRects().length ? xAncre : XL.units[XL.pages[xPage][0]].els[0];
+      exoUnits(e); paginate(XL);
+      for (n = XL.base.length - 1; n >= 0; n--) if (XL.base[n].els.some(function(x){ return x === el || x.contains(el); })) id = n;
+      showX(pageOf(XL, id));
+      if (ouvert && !$('.stmt-b', exHead).hidden) enonce();      /* l'énoncé qu'on avait fait réapparaître reste affiché */
+    }
+    /* La solution d'une question vient d'être affichée ou cachée : les pages de l'exercice sont refaites, et on va là où elle commence */
+    function solution(e, j, on){
+      if (focus !== e.id || !XL || vEx.hidden) return;
+      var k;
+      exoUnits(e); paginate(XL);
+      k = pageOf(XL, on && xS[j] != null ? xS[j] : xQ[j]);
+      if (k !== xPage) window.scrollTo(0, 0);
+      showX(k);
+    }
+    $('.ex-back', exHead).addEventListener('click', function(){ setFocus(null); });
+    $('.pg-prev', exNav).addEventListener('click', function(){ pas(-1); });
+    $('.pg-next', exNav).addEventListener('click', function(){ pas(1); });
+    glisser(vEx, function(d){ if (focus) pas(d); });
+    document.addEventListener('langchange', refocus);
+    var xTimer = null, xLarg = window.innerWidth;
+    window.addEventListener('resize', function(){ clearTimeout(xTimer); xTimer = setTimeout(function(){ if (xLarg !== window.innerWidth){ xLarg = window.innerWidth; refocus(); } }, 180); });
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ clearTimeout(xTimer); xTimer = setTimeout(refocus, 60); });
     function cardHead(e){
       var L = curLang(), bits = [], nq = e.parts.length;
       if (e.stars) bits.push('<span class="stars" aria-label="' + e.stars + ' / 3">' + starStr(e.stars) + '</span>');
@@ -51,23 +230,18 @@
         mountPart($('.part[data-j="' + j + '"]', body), p, j + 1, {
           id: 'in-' + e.id + '-' + j, solved: store.solved[pk(e, j)] || false,
           onSolved: function(val){ store.solved[pk(e, j)] = String(val || '1'); save(); refreshCard(e); refreshSummary(); if (nDone(e) === e.parts.length) owlEvt('exo'); },
-          onUnsolved: function(){ delete store.solved[pk(e, j)]; save(); refreshCard(e); refreshSummary(); }
+          onUnsolved: function(){ delete store.solved[pk(e, j)]; save(); refreshCard(e); refreshSummary(); },
+          onSol: function(on){ solution(e, j, on); }
         });
       });
     }
     function bindCard(e, art){
-      var head = $('.exo-h', art), body = $('.exo-b', art);
-      head.addEventListener('click', function(){
-        var open = body.hidden;
-        if (open && !body.firstChild) renderBody(e, body);
-        body.hidden = !open; opened[e.id] = open;
-        head.setAttribute('aria-expanded', String(open));
-        art.classList.toggle('open', open);
-      });
+      $('.exo-h', art).addEventListener('click', function(){ setFocus(focus === e.id ? null : e.id); });
     }
     function markLinks(e){ $$('[data-exo="' + e.id + '"]').forEach(function(b){ b.classList.toggle('done', isDone(e)); var k = b.querySelector('b'); if (k) k.textContent = e.n; }); }
     function refreshCard(e){
       markLinks(e);
+      if (focus === e.id) majFocus();
       var art = document.getElementById('x-' + e.id);
       if (!art) return;
       art.className = cardClass(e);
@@ -80,7 +254,7 @@
       $('.ex-bar', vEx).style.width = (EX.length ? d / EX.length * 100 : 0) + '%';
     }
     function renderList(){
-      listed = true;
+      listed = true; liste = [];
       listEl.innerHTML = '';
       groups.forEach(function(g){
         var items = EX.filter(function(e){ return e.group === g.k; });
@@ -91,6 +265,7 @@
         gh.innerHTML = '<h2>' + biIn(g) + '</h2><span id="gh-' + c.id + '-' + g.k + '">' + items.filter(isDone).length + ' / ' + items.length + '</span>';
         listEl.appendChild(gh);
         shown.forEach(function(e){
+          liste.push(e);
           var art = document.createElement('article');
           art.id = 'x-' + e.id;
           art.className = cardClass(e);
@@ -102,8 +277,15 @@
       });
       if (!listEl.firstChild) listEl.innerHTML = '<div class="card">' + bi({ fr: '<p><b>Bravo !</b> Tous les exercices de cette liste sont réussis.</p>', it: '<p><b>Brava!</b> Hai risolto tutti gli esercizi di questa lista.</p>' }) + '</div>';
       refreshSummary();
+      if (focus && !document.getElementById('x-' + focus)) setFocus(null);
+    }
+    /* À l'ouverture, la liste montre le premier groupe où il reste un exercice à faire : une liste courte */
+    function premierGroupe(){
+      for (var n = 0; n < groups.length; n++) if (EX.some(function(e){ return e.group === groups[n].k && !isDone(e); })) return groups[n].k;
+      return 'all';
     }
     function setFilter(f){
+      if (focus) setFocus(null);
       filter = f;
       $$('.ex-filter .chip', vEx).forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.f === f)); });
       renderList();
@@ -117,37 +299,121 @@
     /* ---------- Entraînement ---------- */
     var vTr = mkView('entrainement', c, vhead({ fr: 'Questions sans fin', it: 'Domande senza fine' }, { fr: 'Entraînement', it: 'Allenamento' },
       { fr: 'Une nouvelle question à chaque fois, avec d’autres nombres. Choisis un thème et enchaîne les bonnes réponses.', it: 'Ogni volta una domanda nuova, con altri numeri. Scegli un argomento e fai una serie di risposte giuste.' }) +
-      '<div class="chips ui tr-modes" role="group" aria-label="Thème">' + chip('m', 'mix', { fr: 'Tout mélangé', it: 'Tutto misto' }, true) + c.modes.map(function(m){ return chip('m', m.k, m); }).join('') + '</div>' +
-      '<div class="stats ui"><div class="stat"><b class="tr-streak">0</b><small><span class="fr">Série</span><span class="it">Serie</span></small></div>' +
-      '<div class="stat"><b class="tr-best">0</b><small><span class="fr">Record</span><span class="it">Record</span></small></div>' +
-      '<div class="stat"><b class="tr-total">0</b><small><span class="fr">Réussies</span><span class="it">Giuste</span></small></div></div><div class="card tr-card"></div>');
+      /* en haut : les thèmes et une barre qui se remplit en cinq bonnes réponses de suite ; en bas, toujours à portée : la série et « Nouvelle question » */
+      '<div class="pghead trhead ui"><div class="chips tr-modes" role="group" aria-label="Thème">' + chip('m', 'mix', { fr: 'Tout mélangé', it: 'Tutto misto' }, true) + c.modes.map(function(m){ return chip('m', m.k, m); }).join('') + '</div>' + pgBar() + '</div>' +
+      '<div class="card tr-card"></div>' +
+      '<div class="pgnav ui"><div class="pgnav-in tr-nav"><div class="tr-stats"><span><span class="fr">Série</span><span class="it">Serie</span> <b class="tr-streak">0</b></span>' +
+      '<span><span class="fr">Record</span><span class="it">Record</span> <b class="tr-best">0</b></span><span><span class="fr">Réussies</span><span class="it">Giuste</span> <b class="tr-total">0</b></span></div>' +
+      '<button class="btn pri tr-next" type="button">' + biUI('Nouvelle question', 'Nuova domanda') + ICON_NEXT + '</button></div></div>');
     var trMode = 'mix', trQ = null, trCard = $('.tr-card', vTr), trLast = '';
-    function trStats(){ $('.tr-streak', vTr).textContent = st.tr.streak; $('.tr-best', vTr).textContent = st.tr.best; $('.tr-total', vTr).textContent = st.tr.total; }
+    vTr.classList.add('pg');
+    function trStats(){
+      $('.tr-streak', vTr).textContent = st.tr.streak; $('.tr-best', vTr).textContent = st.tr.best; $('.tr-total', vTr).textContent = st.tr.total;
+      setBar(vTr, st.tr.streak ? ((st.tr.streak - 1) % 5 + 1) * 20 : 0);      /* pleine à 5, 10, 15... : Hector félicite */
+    }
     function nextTraining(){
       var m, q, tries = 0;
       /* On évite de reposer deux fois de suite exactement la même question */
       do { m = trMode === 'mix' ? pick(c.mix) : trMode; q = c.gen[m](); tries++; } while (tries < 6 && JSON.stringify(q.text) === trLast);
       trQ = q; trLast = JSON.stringify(q.text);
-      trCard.innerHTML = '<span class="qtype">' + biIn(trQ.type) + '</span><div class="qtext">' + B(trQ.text) + '</div><div class="part tr-part"></div>' +
-        '<div class="tools"><button class="btn pri tr-next" type="button">' + biUI('Nouvelle question', 'Nuova domanda') + ICON_NEXT + '</button></div>';
+      trCard.innerHTML = '<span class="qtype">' + biIn(trQ.type) + '</span><div class="qtext">' + B(trQ.text) + '</div><div class="part tr-part"></div>';
       mountPart($('.tr-part', trCard), trQ.part, '?', {
         id: 'tr-in-' + c.id,
         onSolved: function(v, first){ if (first){ st.tr.streak++; st.tr.total++; if (st.tr.streak > st.tr.best) st.tr.best = st.tr.streak; } else { st.tr.total++; } save(); trStats(); if (first && st.tr.streak % 5 === 0) owlEvt('serie', st.tr.streak); },
         onWrong: function(){ st.tr.streak = 0; save(); trStats(); },
         onReveal: function(){ st.tr.streak = 0; save(); trStats(); $('.fbw', trCard).innerHTML = fbHTML('mid', MSG.seen); }
       });
-      $('.tr-next', trCard).addEventListener('click', function(){ nextTraining(); trCard.scrollIntoView({ block: 'start' }); });
+      serreTr();
     }
+    /* une question un peu trop haute pour l'écran se resserre : le bouton du bas ne cache rien */
+    function serreTr(){
+      if (vTr.hidden || !trQ) return;
+      trCard.classList.remove('juste');
+      if (trCard.offsetHeight > budget(trCard)) trCard.classList.add('juste');
+    }
+    document.addEventListener('langchange', serreTr);
+    $('.tr-next', vTr).addEventListener('click', function(){ nextTraining(); window.scrollTo(0, 0); });
     $$('.tr-modes .chip', vTr).forEach(function(ch){
       ch.addEventListener('click', function(){ trMode = ch.dataset.m; press($$('.tr-modes .chip', vTr), ch); nextTraining(); });
     });
     trStats();
 
     /* ---------- Contrôle blanc ---------- */
-    var vTe = mkView('controle', c, '<div class="vhead"><p class="eyebrow">' + biIn({ fr: 'Comme le jour du contrôle', it: 'Come il giorno della verifica' }) + '</p><h1><span class="fr">Contrôle blanc</span><span class="it sub-it">Verifica di prova</span></h1>' +
-      bi({ fr: '10 questions, une seule bonne réponse par question, 2 points chacune. Réponds à tout, puis corrige. Un nouveau sujet à chaque fois.', it: '10 domande, una sola risposta giusta per domanda, 2 punti ciascuna. Rispondi a tutto, poi correggi. Ogni volta un compito nuovo.' }, 'p', 'lead') +
-      '<p class="best test-best"></p></div><div class="card test-box"></div>');
+    var vTe = mkView('controle', c, '<div class="vhead"><p class="eyebrow">' + biIn({ fr: 'Comme le jour du contrôle', it: 'Come il giorno della verifica' }) + '</p><h1><span class="fr">Contrôle blanc</span><span class="it sub-it">Verifica di prova</span></h1></div><div class="card test-box"></div>');
     var testBox = $('.test-box', vTe), testQs = null, testDone = false;
+    /* Le contrôle se fait page par page, une question à la fois : la barre avance en haut, Précédent / Suivant en bas */
+    var tHead = document.createElement('div'), tNav = document.createElement('div'), TL = { el: testBox, base: [], units: [], pages: null, key: '' }, tPage = 0, tQ = [];
+    tHead.className = 'pghead exhead ui';
+    tHead.innerHTML = '<div class="exhead-r"><span class="ex-where"><span class="fr">Contrôle blanc</span><span class="it">Verifica di prova</span></span><span class="t-rep"></span></div>' + pgBar();
+    vTe.insertBefore(tHead, testBox);
+    tNav.className = 'pgnav ui'; tNav.innerHTML = pgNavHTML();
+    vTe.appendChild(tNav);
+    vTe.classList.add('pg');
+    /* Les unités à mettre en pages : la consigne, chaque question avec ses réponses, puis sa correction, la page « Corriger », le résultat */
+    function testUnits(){
+      var u = [], H = budget(testBox), enfants = [].slice.call(testBox.children);
+      tQ = [];
+      $$('.pg-off', testBox).forEach(function(e){ e.classList.remove('pg-off'); });
+      /* une question (avec ses réponses) plus haute que l'écran se resserre pour y tenir */
+      $$('.tq', testBox).forEach(function(el){
+        var autres = enfants.filter(function(x){ return x !== el; }).concat([$('.fbw', el)]);
+        el.classList.remove('juste');
+        autres.forEach(function(x){ x.classList.add('pg-off'); });
+        if (testBox.offsetHeight > H) el.classList.add('juste');
+        autres.forEach(function(x){ x.classList.remove('pg-off'); });
+      });
+      [].forEach.call(testBox.children, function(el){
+        if (el.hidden || !el.firstChild) return;
+        if (el.classList.contains('tq')){
+          tQ[Number(el.dataset.i)] = u.length;
+          u.push({ els: [$('.qtext', el), $('.choices', el)], anc: [el], entier: true, brk: true });      /* une question par page */
+          [].forEach.call($('.fbw', el).children, function(x){ u.push({ els: [x], anc: [el] }); });
+        } else if (el.classList.contains('test-intro')) u.push({ els: [el], anc: [] });
+        else [].forEach.call(el.children, function(x, n){ u.push({ els: [x], anc: [el], brk: n === 0, keep: x.tagName === 'P' }); });      /* page « Corriger », résultat */
+      });
+      u.forEach(function(x, n){ x.id = n; x.brk = !!x.brk; x.tete = false; x.keep = !!x.keep; x.on = true; x.anc.forEach(function(a){ a._pg = 0; }); });
+      u.forEach(function(x){ x.anc.forEach(function(a){ a._pg++; }); });
+      TL.base = TL.units = u; TL.pages = null; TL.key = '';
+    }
+    function showT(k){
+      if (vTe.hidden || !TL.base.length) return;
+      if (!TL.pages || TL.key !== pgKey(TL)) paginate(TL);
+      k = Math.max(0, Math.min(TL.pages.length - 1, k)); tPage = k;
+      var fin = k === TL.pages.length - 1;
+      TL.units.forEach(function(u, n){ vis(TL, n, TL.pages[k].indexOf(n) >= 0); });
+      setBar(tHead, (k + 1) / TL.pages.length * 100);
+      $('.pg-count', tNav).textContent = (k + 1) + ' / ' + TL.pages.length;
+      $('.pg-prev', tNav).disabled = k === 0;
+      $('.pg-next', tNav).disabled = fin && !testDone;      /* à la dernière page : on corrige ; après la correction : un nouveau contrôle */
+      $('.pg-next-t', tNav).innerHTML = fin && testDone ? biUI('Nouveau contrôle', 'Nuova verifica') : biUI('Suivant', 'Avanti');
+      window.scrollTo(0, 0);
+    }
+    function tPas(d){ if (d > 0 && testDone && TL.pages && tPage === TL.pages.length - 1) newTest(); else showT(tPage + d); }
+    function retest(){      /* au même endroit après un nouveau découpage (langue, polices, rotation de l'écran) */
+      if (vTe.hidden || !TL.pages) return;
+      var el = TL.units[TL.pages[tPage][0]].els[0], n, id = 0;
+      testUnits(); paginate(TL);
+      for (n = TL.base.length - 1; n >= 0; n--) if (TL.base[n].els.indexOf(el) >= 0) id = n;
+      showT(pageOf(TL, id));
+    }
+    $('.pg-prev', tNav).addEventListener('click', function(){ tPas(-1); });
+    $('.pg-next', tNav).addEventListener('click', function(){ tPas(1); });
+    glisser(vTe, function(d){ if (d < 0 || !TL.pages || tPage < TL.pages.length - 1) showT(tPage + d); });
+    document.addEventListener('langchange', retest);
+    var tTimer = null, tLarg = window.innerWidth;
+    window.addEventListener('resize', function(){ clearTimeout(tTimer); tTimer = setTimeout(function(){ if (tLarg !== window.innerWidth){ tLarg = window.innerWidth; retest(); } }, 180); });
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ clearTimeout(tTimer); tTimer = setTimeout(retest, 60); });
+    /* Un numéro par question : on voit d'un coup d'œil où il manque une réponse (puis, après la correction, ce qui est juste ou faux) et on y va d'un geste */
+    function nums(){
+      return '<div class="t-nums ui">' + testQs.map(function(q, i){
+        var k = !testDone ? (q.pick >= 0 ? ' on' : '') : q.pick === q.ok ? ' ok' : q.pick < 0 ? ' vide' : ' ko';
+        return '<button class="t-num' + k + '" type="button" data-q="' + i + '">' + (i + 1) + (testDone ? '<i aria-hidden="true">' + (q.pick === q.ok ? '✓' : q.pick < 0 ? '?' : '✗') + '</i>' : '') + '</button>';
+      }).join('') + '</div>';
+    }
+    testBox.addEventListener('click', function(ev){
+      var b = ev.target.closest ? ev.target.closest('.t-num') : null;
+      if (b && TL.pages) showT(pageOf(TL, tQ[Number(b.dataset.q)]));
+    });
     function optKey(o){ return typeof o === 'string' ? o : o.fr; }
     function makeTest(){
       return shuffle(c.tq.slice()).slice(0, 10).map(function(f){
@@ -161,15 +427,17 @@
       });
     }
     function optHTML(o){ return typeof o === 'string' ? '<span class="ct">' + typo(o, true) + '</span>' : '<span class="ct">' + biIn(o) + '</span>'; }
+    function bestHTML(){ return st.bestTest == null ? '' : biIn({ fr: 'Ton meilleur score : ' + st.bestTest + ' / 20', it: 'Il tuo record: ' + st.bestTest + ' / 20' }); }
     function renderTest(){
-      var h = '';
+      var h = '<div class="test-intro">' + bi({ fr: '10 questions, une seule bonne réponse par question, 2 points chacune. Réponds à tout, puis corrige.', it: '10 domande, una sola risposta giusta per domanda, 2 punti ciascuna. Rispondi a tutto, poi correggi.' }, 'p') + '<p class="best test-best"></p></div>';
       testQs.forEach(function(q, i){
         var qn = '<span class="qn">' + (i + 1) + '.</span> ';
         h += '<div class="tq" data-i="' + i + '"><div class="qtext">' + bi({ fr: qn + q.fr, it: qn + q.it }) + '</div><div class="choices">' +
           q.list.map(function(o, k){ return '<button class="choice" type="button" data-k="' + k + '" aria-pressed="false"><span class="k">' + 'abcd'.charAt(k) + '</span>' + optHTML(o) + '</button>'; }).join('') +
           '</div><div class="fbw"></div></div>';
       });
-      h += '<div class="tools"><button class="btn pri test-go" type="button">' + biUI('Corriger', 'Correggi') + '</button><span class="note-s test-count"></span></div><div class="test-res" aria-live="polite"></div>';
+      h += '<div class="tfin"><p class="t-aide ui"><span class="fr">As-tu répondu à tout ? Touche un numéro pour revoir une question.</span><span class="it">Hai risposto a tutto? Tocca un numero per rivedere una domanda.</span></p><div class="t-numw"></div>' +
+        '<div class="tools"><button class="btn pri test-go" type="button">' + biUI('Corriger', 'Correggi') + '</button></div></div><div class="test-res" aria-live="polite"></div>';
       testBox.innerHTML = h;
       $$('.tq', testBox).forEach(function(div){
         var q = testQs[Number(div.dataset.i)];
@@ -183,9 +451,14 @@
         });
       });
       $('.test-go', testBox).addEventListener('click', gradeTest);
-      countTest();
+      countTest(); showBest();
+      testUnits(); showT(0);
     }
-    function countTest(){ var n = testQs.filter(function(q){ return q.pick >= 0; }).length; $('.test-count', testBox).innerHTML = biIn({ fr: n + ' / ' + testQs.length + ' réponses', it: n + ' / ' + testQs.length + ' risposte' }); }
+    function countTest(){
+      var n = testQs.filter(function(q){ return q.pick >= 0; }).length, r = { fr: n + ' / ' + testQs.length + ' réponses', it: n + ' / ' + testQs.length + ' risposte' };
+      $('.t-numw', testBox).innerHTML = nums();
+      $('.t-rep', tHead).innerHTML = '<span class="fr">' + r.fr + '</span><span class="it">' + r.it + '</span>';      /* en haut : où on en est dans les réponses */
+    }
     function gradeTest(){
       var score = 0;
       testDone = true;
@@ -201,14 +474,20 @@
       });
       if (st.bestTest == null || score > st.bestTest){ st.bestTest = score; save(); }
       var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : c.low;
-      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(msg.fr, true) + '</span><span class="it">' + msg.it + '</span></div></div></div><div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
+      /* le résultat d'abord, puis les questions corrigées, page par page */
+      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(msg.fr, true) + '</span><span class="it">' + msg.it + '</span></div></div></div>' +
+        '<p class="t-aide ui"><span class="fr">Touche un numéro pour voir sa correction.</span><span class="it">Tocca un numero per vedere la correzione.</span></p>' + nums() +
+        '<div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
       $('.test-go', testBox).disabled = true;
-      $('.test-new', testBox).addEventListener('click', function(){ newTest(); window.scrollTo(0, 0); });
+      $('.test-new', testBox).addEventListener('click', function(){ newTest(); });
       showBest(); owlEvt('note', score, $('.test-owl', testBox));
-      $('.test-res', testBox).scrollIntoView({ block: 'center' });
+      testBox.insertBefore($('.test-res', testBox), testBox.firstChild);
+      [].forEach.call(testBox.children, function(el){ if (el.classList.contains('tfin') || el.classList.contains('test-intro')) el.hidden = true; });
+      $('.t-rep', tHead).textContent = score + ' / 20';
+      testUnits(); showT(0);
     }
-    function showBest(){ $('.test-best', vTe).innerHTML = st.bestTest == null ? '' : biIn({ fr: 'Ton meilleur score : ' + st.bestTest + ' / 20', it: 'Il tuo record: ' + st.bestTest + ' / 20' }); }
-    function newTest(){ testQs = makeTest(); testDone = false; renderTest(); showBest(); }
+    function showBest(){ var h = bestHTML(); $$('.test-best', vTe).forEach(function(e){ e.innerHTML = h; }); }
+    function newTest(){ testQs = makeTest(); testDone = false; renderTest(); }
 
     /* ---------- Cours : des pages qui tiennent à l'écran ---------- */
     /* Chaque partie du cours est découpée en petites unités (un titre, une paire de paragraphes fr + it, un calcul, une ligne
@@ -225,7 +504,7 @@
       return k.contains('box') || k.contains('tw') || k.contains('sheet') || k.contains('kw') || k.contains('go-ex') || k.contains('go-l') || tg === 'TBODY' ||
         (tg === 'TABLE' && !k.contains('mult') && !k.contains('bt')) || ((tg === 'UL' || tg === 'OL') && !k.contains('fr') && !k.contains('it'));
     }
-    function isDecor(el){ var k = el.classList; return k.contains('tag') || k.contains('go-t') || el.tagName === 'THEAD'; }      /* affiché avec son cadre, jamais seul */
+    function isDecor(el){ var k = el.classList; return k.contains('tag') || k.contains('go-t') || k.contains('ph') || el.tagName === 'THEAD'; }      /* affiché avec son cadre, jamais seul */
     function numerote(ol){ if (ol.tagName === 'OL') kidsOf(ol).forEach(function(li, n){ li.setAttribute('value', n + 1); }); }      /* un numéro garde sa valeur même si la liste est coupée */
     function kidsOf(el){ return [].filter.call(el.children, function(x){ return !isDecor(x); }); }
     function sameShape(a, b){
@@ -235,6 +514,12 @@
     }
     /* Une paire fr + it de même forme (deux listes de même longueur, deux blocs des mêmes paragraphes) se découpe élément par élément */
     function pairUnits(a, b, anc){
+      if (a.classList.contains('calc') && b.classList.contains('calc') && a.tagName === 'DIV'){
+        /* un calcul posé écrit dans chaque langue : coupé aux mêmes endroits des deux côtés, jamais au milieu d'une ligne */
+        var ca = calcUnits(a, anc.concat([a, b])), cb = calcUnits(b, anc.concat([a, b]));
+        if (ca.length === cb.length) return ca.map(function(u, n){ return { els: u.els.concat(cb[n].els), anc: u.anc, mi: u.els.length }; });      /* mi : où commence l'italien */
+        return [{ els: [a, b], anc: anc }];
+      }
       if ((a.tagName === 'DIV' || a.tagName === 'UL' || a.tagName === 'OL') && sameShape(a, b)){
         var x = kidsOf(a), y = kidsOf(b), out = [], anc2 = anc.concat([a, b]);
         numerote(a); numerote(b);
@@ -304,10 +589,9 @@
     var pgHead = document.createElement('div'), pgNav = document.createElement('div');
     pgHead.className = 'pghead ui';
     toc.parentNode.insertBefore(pgHead, toc); pgHead.appendChild(toc);
-    pgHead.insertAdjacentHTML('beforeend', '<div class="pgbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div>');
+    pgHead.insertAdjacentHTML('beforeend', pgBar());
     pgNav.className = 'pgnav ui';
-    pgNav.innerHTML = '<div class="pgnav-in"><button class="btn pg-prev" type="button">' + ICON_PREV + biUI('Précédent', 'Indietro') + '</button><span class="pg-count" aria-live="polite"></span>' +
-      '<button class="btn pri pg-next" type="button"><span class="pg-next-t"></span>' + ICON_NEXT + '</button></div>';
+    pgNav.innerHTML = pgNavHTML();
     vCo.appendChild(pgNav);
     vCo.classList.add('pg');
     /* Ce dont dépend le découpage : la langue affichée, la largeur de l'écran et la hauteur disponible pour une page */
@@ -315,7 +599,7 @@
     /* Hauteur disponible pour une page : de la barre de progression jusqu'aux boutons du bas */
     function budget(l){
       var top = l.getBoundingClientRect().top + window.pageYOffset;
-      var bas = parseFloat(getComputedStyle(mainEl).paddingBottom) + parseFloat(getComputedStyle(vCo).paddingBottom);      /* place gardée pour les boutons et les onglets */
+      var bas = parseFloat(getComputedStyle(mainEl).paddingBottom) + parseFloat(getComputedStyle(l.closest('.view')).paddingBottom);      /* place gardée pour les boutons et les onglets */
       return Math.max(240, window.innerHeight - top - bas);
     }
     function visible(u){ return u.els.some(function(e){ return e.getClientRects().length > 0; }); }
@@ -323,11 +607,12 @@
     function ouvre(U, n){ var prec = n > 0 ? U[n - 1].anc : []; return U[n].anc.filter(function(f){ return prec.indexOf(f) < 0; }); }
     function finDe(U, n, f){ var e = n; while (e + 1 < U.length && U[e + 1].anc.indexOf(f) >= 0) e++; return e; }
     function montre(L, a, b, on){ for (var n = a; n <= b; n++) vis(L, n, on); }
+    function copie(u, els){ var o = {}, k; for (k in u) o[k] = u[k]; o.els = els; o.on = false; return o; }
     function paginate(L){
       var H, U, pages = [], a = 0, b, page, real;
       L.units.forEach(function(u, n){ vis(L, n, false); });
       /* on repart des unités de base : les séparations faites pour une autre langue ou une autre taille d'écran ne valent plus */
-      U = L.units = L.base.map(function(u){ return { els: u.els, anc: u.anc, id: u.id, brk: u.brk, tete: u.tete, keep: u.keep, on: false }; });
+      U = L.units = L.base.map(function(u){ return copie(u, u.els); });
       H = budget(L.el);
       while (a < U.length){
         page = []; real = false; b = a;
@@ -368,17 +653,36 @@
               vis(L, b, false); page.slice(1).forEach(function(n){ vis(L, n, false); });
               b = page[0] + 1; page = [page[0]]; break;
             }
-            if (U[b].els.length === 2 && U[b].els.every(function(e){ return e.getClientRects().length > 0; })){
+            var mi = U[b].entier ? 0 : U[b].mi || (U[b].els.length === 2 ? 1 : 0);
+            if (mi && U[b].els.every(function(e){ return e.getClientRects().length > 0; })){
               /* le français et sa traduction ne tiennent pas ensemble sur l'écran : le français d'abord, l'italien sur la page suivante */
               vis(L, b, false);
-              U.splice(b, 1, { els: [U[b].els[0]], anc: U[b].anc, id: U[b].id, brk: U[b].brk, tete: false, keep: false, on: false },
-                             { els: [U[b].els[1]], anc: U[b].anc, id: U[b].id, brk: false, tete: false, keep: U[b].keep, on: false });
+              var fr = copie(U[b], U[b].els.slice(0, mi)), it = copie(U[b], U[b].els.slice(mi));
+              fr.tete = it.tete = fr.keep = it.brk = false;
+              fr.entier = it.entier = true;      /* chaque moitié reste d'un seul tenant */
+              U.splice(b, 1, fr, it);
               continue;
+            }
+            if (page.length){
+              /* il n'y a encore que des annonces sur la page et la suite n'y tient pas : si elle tient seule sur une page, elle y va */
+              page.forEach(function(n){ vis(L, n, false); });
+              h = L.el.offsetHeight;
+              page.forEach(function(n){ vis(L, n, true); });
+              if (h <= H){ vis(L, b, false); break; }
             }
           }
           page.push(b); if (!U[b].keep && visible(U[b])) real = true; b++;
         }
-        while (page.length > 1 && U[page[page.length - 1]].keep && b < U.length){ vis(L, page.pop(), false); b--; }
+        /* une annonce (« ... : ») restée en bas de page passe à la page suivante avec ce qu'elle annonce, si les deux y tiennent ensemble */
+        var nk = 0, haut, h2;
+        while (b < U.length && nk < page.length - 1 && U[page[page.length - 1 - nk]].keep) nk++;
+        if (nk){
+          haut = page.slice(0, page.length - nk);
+          haut.forEach(function(n){ vis(L, n, false); }); vis(L, b, true);
+          h2 = L.el.offsetHeight;
+          vis(L, b, false); haut.forEach(function(n){ vis(L, n, true); });
+          if (h2 <= H) while (nk--){ vis(L, page.pop(), false); b--; }
+        }
         if (!real && pages.length && !page.some(function(n){ return visible(U[n]); })) pages[pages.length - 1] = pages[pages.length - 1].concat(page);      /* rien à voir dans cette langue : pas de page vide */
         else pages.push(page);
         page.forEach(function(n){ vis(L, n, false); });
@@ -397,8 +701,8 @@
       st.pu = st.pu || {};
       var prem = L.units[L.pages[k][0]].id;
       if (st.pu[L.el.id] !== prem){ st.pu[L.el.id] = prem; save(); }
-      var n = lessons.indexOf(L.el), pct = Math.round((k + 1) / L.pages.length * 100), bar = $('.pgbar', pgHead), fin = n === lessons.length - 1 && k === L.pages.length - 1;
-      $('i', bar).style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct);
+      var n = lessons.indexOf(L.el), fin = n === lessons.length - 1 && k === L.pages.length - 1;
+      setBar(pgHead, (k + 1) / L.pages.length * 100);
       $('.pg-count', pgNav).textContent = (k + 1) + ' / ' + L.pages.length;
       $('.pg-prev', pgNav).disabled = n === 0 && k === 0;
       $('.pg-next-t', pgNav).innerHTML = fin ? biUI('Exercices', 'Esercizi') : biUI('Suivant', 'Avanti');
@@ -436,20 +740,11 @@
       for (var k = 0; k < U.length; k++) if (U[k].els.some(function(e){ return e === el || e.contains(el) || el.contains(e); })){ n = k; break; }
       showPart(l.id, n);
     }
-    /* Glisser le doigt vers la gauche ou la droite tourne la page (sauf sur une zone qui défile elle-même de côté) */
-    var glisse = null;
-    function defileDeCote(el){ for (; el && el !== vCo; el = el.parentNode) if (el.scrollWidth > el.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return true; return false; }
-    vCo.addEventListener('touchstart', function(ev){ var p = ev.touches[0]; glisse = ev.touches.length === 1 ? { x: p.clientX, y: p.clientY, t: Date.now(), el: ev.target } : null; }, { passive: true });
-    vCo.addEventListener('touchend', function(ev){
-      if (!glisse) return;
-      var p = ev.changedTouches[0], dx = p.clientX - glisse.x, dy = p.clientY - glisse.y, g = glisse;
-      glisse = null;
-      if (Date.now() - g.t > 700 || Math.abs(dx) < 64 || Math.abs(dx) < 2.2 * Math.abs(dy) || defileDeCote(g.el)) return;
-      step(dx < 0 ? 1 : -1);
-    }, { passive: true });
+    glisser(vCo, step);
     document.addEventListener('keydown', function(ev){
-      if (vCo.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
-      if (ev.key === 'ArrowRight') step(1); else if (ev.key === 'ArrowLeft') step(-1);
+      var d = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (!d || ev.altKey || ev.ctrlKey || ev.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+      if (!vCo.hidden) step(d); else if (!vEx.hidden){ if (focus) pas(d); } else if (!vTe.hidden && (d < 0 || !TL.pages || tPage < TL.pages.length - 1)) showT(tPage + d);
     });
     /* La hauteur des pages dépend de la langue affichée, de la taille de l'écran et des polices : on redécoupe quand elles changent */
     function redecoupe(){ if (!vCo.hidden && st.part) showPart(st.part); }
@@ -474,22 +769,20 @@
       c: c, st: st, EX: EX,
       el: { cours: vCo, exercices: vEx, entrainement: vTr, controle: vTe },
       enter: function(v){
-        if (v === 'exercices' && !listed) renderList();
-        if (v === 'entrainement' && !trQ && c.mix.length) nextTraining();
-        if (v === 'controle' && !testQs && c.tq.length) newTest();
+        plein();
+        if (v === 'exercices'){ if (!listed) setFilter(premierGroupe()); else if (focus){ if (XL && XL.pages) refocus(); else setFocus(focus); } }
+        if (v === 'entrainement'){ if (!trQ && c.mix.length) nextTraining(); else serreTr(); }
+        if (v === 'controle'){ if (!testQs && c.tq.length) newTest(); else retest(); }
         if (v === 'cours') showPart(st.part || lessons[0].id);
       },
       stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest }; },
       reveal: reveal,
       /* Ouvre un exercice dans la liste et renvoie sa carte */
       openExo: function(id){
-        var e = null;
-        EX.forEach(function(x){ if (x.id === id) e = x; });
+        var e = parId(id);
         if (!e) return null;
-        opened[id] = true;
-        if (filter !== 'all' && filter !== e.group) filter = 'all';
-        $$('.ex-filter .chip', vEx).forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.f === filter)); });
-        renderList();
+        if (!listed || (filter !== 'all' && filter !== e.group)) setFilter(e.group);
+        setFocus(id);
         return document.getElementById('x-' + id);
       },
       setFilter: setFilter,
@@ -500,6 +793,7 @@
 
   /* ---------- Chapitres, accueil, navigation ---------- */
   var ICON_PREV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
+  var ICON_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>';
   var CH = {}, VIEWS = ['cours', 'exercices', 'entrainement', 'controle'];
   CHAPS.forEach(function(c){ CH[c.id] = makeChapter(c); });
   window.scolairOccupe = function(){ return CHAPS.some(function(c){ return CH[c.id].busy(); }); };
@@ -542,6 +836,7 @@
     $$('main > .view').forEach(function(s){ s.hidden = true; });
     var home = !r.ch, ch = home ? null : CH[r.ch];
     document.body.classList.toggle('at-home', home);
+    document.documentElement.classList.remove('plein');      /* remis par la vue des exercices quand un exercice y est ouvert */
     if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
     else {
       ch.el[r.v].hidden = false;
@@ -582,7 +877,7 @@
       EX_ALL.forEach(function(e){ if (e.id === id) ch = CH[e.ch]; });
       if (!ch) return;
       ev.preventDefault();
-      go('#' + ch.c.id + '/exercices', function(){ var art = ch.openExo(id); if (art) art.scrollIntoView({ block: 'start' }); });
+      go('#' + ch.c.id + '/exercices', function(){ ch.openExo(id); });
     } else {
       ch = CH[t.getAttribute('data-ch')];
       if (!ch) return;

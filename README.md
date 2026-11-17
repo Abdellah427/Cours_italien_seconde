@@ -23,7 +23,7 @@ Ouvrir `autonome/scolair-maths-seconde.html` dans un navigateur, ou servir `docs
 - `shell_top.html`, `accueil.html`, `shell_bottom.html` : barre du haut, écran d'accueil, barre d'onglets.
 - `base.js` : langue, stockage, textes bilingues, schémas en bulles, registre des chapitres.
 - `question.js` : une question et sa correction (un nombre, des cases à remplir, un choix, ou un exercice à faire sur le cahier).
-- `moteur.js` : pour chaque chapitre, le cours page par page (découpage mesuré à la hauteur de l'écran, barre de progression, Précédent / Suivant), la liste des exercices, l'entraînement, le contrôle blanc ; l'écran d'accueil et la navigation.
+- `moteur.js` : pour chaque chapitre, le cours, les exercices et le contrôle blanc en pages (découpage mesuré à la hauteur de l'écran, barre qui se remplit en haut, Précédent / Suivant en bas), la liste des exercices, l'entraînement ; l'écran d'accueil et la navigation.
 - `hector.js`, `owl_pre.js`, `chouette.js`, `chouette.css`, `owl.svg` : Hector.
 - `app.css`, `scolair.css`, `maths.css` : styles (`maths.css` : formules, calculs posés ligne par ligne avec les signes « = » alignés, composants des cours écrits avec des formules).
 - `maj.js` : service worker et rechargement quand une version plus récente est en ligne.

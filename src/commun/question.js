@@ -134,7 +134,7 @@
     } else if (self){
       h += '<p class="selfhow">' + ICON_PEN + '<span><span class="fr">Fais l’exercice sur ton cahier. Ensuite, compare avec la solution.</span><span class="it">Fai l’esercizio sul quaderno. Poi confronta con la soluzione.</span></span></p>';
     }
-    h += '<div class="fbw" aria-live="polite"></div><div class="tools">' +
+    h += (self ? '' : '<div class="fbw" aria-live="polite"></div>') + '<div class="tools">' +
       (p.hint ? '<button class="btn sm hb" type="button" aria-expanded="false">' + ICON_BULB + biUI('Indice', 'Indizio') + '</button>' : '') +
       (p.sol ? '<button class="btn sm sb" type="button" aria-expanded="false">' + ICON_EYE + biUI('Solution', 'Soluzione') + '</button>' : '') + '</div>' +
       (p.more ? '<p class="more">' + B(p.more) + '</p>' : '') +
@@ -142,11 +142,13 @@
       (p.sol ? '<div class="panel sol" hidden><div class="ph">' + biUI('Solution commentée', 'Soluzione spiegata') + '</div>' + B(p.sol) +
         (self ? '<div class="selfq"><p>' + biIn({ fr: 'Compare ligne par ligne avec ton cahier. Alors ?', it: 'Confronta riga per riga con il tuo quaderno. Allora?' }) + '</p><div class="tools">' +
           '<button class="btn pri sok" type="button" aria-pressed="false">' + ICON_CHECK + biUI('J’ai réussi', 'Ci sono riuscita') + '</button>' +
-          '<button class="btn sko" type="button">' + biUI('À refaire', 'Da rifare') + '</button></div></div>' : '') + '</div>' : '');
+          '<button class="btn sko" type="button">' + biUI('À refaire', 'Da rifare') + '</button></div><div class="fbw" aria-live="polite"></div></div>' : '') + '</div>' : '');
     box.innerHTML = h;
     box.classList.toggle('solved', solved);
     if (p.figure && p.figure.chain) drawChain($('.chain', box), p.figure.chain, true);
     var fbw = $('.fbw', box), tried = false;
+    /* ce qui vient d'apparaître (message, indice, solution) est amené à l'écran s'il dépasse en bas */
+    function voir(el){ if (el && el.scrollIntoView && el.getClientRects().length) el.scrollIntoView({ block: 'nearest' }); }
     function done(val){
       if (!solved){ solved = true; box.classList.add('solved'); if (o.onSolved) o.onSolved(val, !tried); owlEvt('ok'); }
     }
@@ -156,12 +158,13 @@
       if (solved){ inp.value = typeof o.solved === 'string' ? o.solved : num(p.ans, decimalsOf(p.tol)); inp.classList.add('ok'); }
       var go = function(){
         var r = judge(p, inp.value);
-        if (r === 'ok'){ inp.classList.add('ok'); fbw.innerHTML = fbHTML('ok', MSG.ok); done(inp.value); return; }
+        if (r === 'ok'){ inp.classList.add('ok'); fbw.innerHTML = fbHTML('ok', MSG.ok); done(inp.value); voir(fbw); return; }
         inp.classList.remove('ok');
-        if (r === 'empty' || r === 'bad'){ fbw.innerHTML = fbHTML('ko', MSG[r]); return; }
+        if (r === 'empty' || r === 'bad'){ fbw.innerHTML = fbHTML('ko', MSG[r]); voir(fbw); return; }
         wrong();
         if (typeof r === 'object') fbw.innerHTML = fbHTML('ko', r.trap);
         else fbw.innerHTML = fbHTML(r === 'no' ? 'ko' : 'mid', (r === 'sign' || r === 'nominus') && p.signMsg ? p.signMsg : MSG[r]);
+        voir(fbw);
       };
       chk.addEventListener('click', go);
       inp.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
@@ -204,13 +207,14 @@
           var i = Number(x.dataset.b), r = readAnswers(x.value), sg = sgOf(i);
           if (r === null) empty = true; else if (r !== r || !r.length) bad = true; else vals[i] = r[0] * (sg && sg.dataset.s === '-1' ? -1 : 1);
         });
-        if (empty || bad){ fbw.innerHTML = fbHTML('ko', empty ? MSG.fempty : MSG.fbad); return; }
+        if (empty || bad){ fbw.innerHTML = fbHTML('ko', empty ? MSG.fempty : MSG.fbad); voir(fbw); return; }
         var res = judgeFill(p, vals);
         clearMarks();
-        if (res.r === 'ok'){ bxs.forEach(function(x){ x.classList.add('ok'); }); fbw.innerHTML = fbHTML('ok', MSG.ok); done(vals.join(';')); return; }
+        if (res.r === 'ok'){ bxs.forEach(function(x){ x.classList.add('ok'); }); fbw.innerHTML = fbHTML('ok', MSG.ok); done(vals.join(';')); voir(fbw); return; }
         wrong();
         if (res.okv) bxs.forEach(function(x){ x.classList.add(res.okv[Number(x.dataset.b)] ? 'ok' : 'ko'); });
         fbw.innerHTML = fbHTML(res.r === 'mid' ? 'mid' : 'ko', res.msg);
+        voir(fbw);
       };
       fchk.addEventListener('click', goFill);
     } else if (p.kind === 'choice'){
@@ -224,7 +228,7 @@
           if (isGood(k)){
             b.classList.add('ok'); b.disabled = true;
             if (found.indexOf(k) < 0) found.push(k);
-            if (found.length < goods.length){ fbw.innerHTML = '<p class="fb ok">' + biIn(MSG.more) + '</p>' + (own ? '<div class="panel why">' + B(own) + '</div>' : ''); return; }
+            if (found.length < goods.length){ fbw.innerHTML = '<p class="fb ok">' + biIn(MSG.more) + '</p>' + (own ? '<div class="panel why">' + B(own) + '</div>' : ''); voir(fbw); return; }
             bs.forEach(function(x){ x.disabled = true; });
             fbw.innerHTML = own ? '<p class="fb ok">' + biIn(MSG.ok) + '</p><div class="panel why">' + B(own) + '</div>' : fbHTML('ok', MSG.ok, p.why);
             done(goods.join(','));
@@ -233,14 +237,18 @@
             wrong();
             fbw.innerHTML = own ? '<p class="fb ko">' + biIn(MSG.cko) + '</p><div class="panel why">' + B(own) + '</div>' : fbHTML('ko', MSG.cko);
           }
+          voir(fbw);
         });
       });
     }
     var hb = $('.hb', box), sb = $('.sb', box), hp = $('.panel.hint', box), sp = $('.panel.sol', box);
-    if (hb) hb.addEventListener('click', function(){ hp.hidden = !hp.hidden; hb.setAttribute('aria-expanded', String(!hp.hidden)); });
+    if (hb) hb.addEventListener('click', function(){ hp.hidden = !hp.hidden; hb.setAttribute('aria-expanded', String(!hp.hidden)); voir(hp); });
     if (sb) sb.addEventListener('click', function(){
       sp.hidden = !sp.hidden; sb.setAttribute('aria-expanded', String(!sp.hidden));
+      box.classList.toggle('vu', !sp.hidden);
       if (!sp.hidden && !solved && o.onReveal) o.onReveal();
+      if (o.onSol) o.onSol(!sp.hidden);      /* la vue qui affiche la question peut se réorganiser (pages) */
+      voir(sp);
     });
     if (self){
       var sok = $('.sok', box), sko = $('.sko', box);

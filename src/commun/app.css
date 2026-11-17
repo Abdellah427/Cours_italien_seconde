@@ -231,10 +231,6 @@ pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;o
 
 /* Entraînement et contrôle */
 .card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin:12px 0}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
-.stat{background:var(--surface);border-radius:16px;padding:10px;text-align:center;box-shadow:var(--shadow)}
-.stat b{display:block;font-family:var(--f-display);font-size:1.4rem;font-weight:700;line-height:1.1}
-.stat small{font-size:.74rem;color:var(--muted);font-weight:700}
 .qtype{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:var(--brand-soft);color:var(--brand);margin-bottom:8px}
 .qtext{font-weight:700;font-size:1.05rem;margin-bottom:10px}
 .tq .qtext div.it{font-weight:600}
@@ -256,19 +252,91 @@ pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;o
 
 /* Cours en pages : rien à faire défiler. En haut, les parties et une barre qui se remplit ; en bas, Précédent et Suivant. */
 .pg-off{display:none!important}
-.view.pg{margin-top:-8px;padding-bottom:36px}      /* avec la marge de la page : la place des boutons du bas */
+.view.pg{margin-top:-8px;padding-bottom:28px}      /* avec la marge de la page : la place des boutons du bas */
 .view.pg > .foot{display:none}
-.view.pg > .vhead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.view.pg > .vhead,.view.serre > .vhead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}      /* le titre reste pour la lecture vocale */
 .pghead{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:0 16px 8px}
 .pghead .toc{position:static;margin:0 -16px;padding:8px 16px 8px}
 .pgbar{height:8px;border-radius:999px;background:#E3E8F1;overflow:hidden}
 .pgbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--up),#2FA468);transition:width .25s}
-.view.pg .lesson{margin:0;padding-top:16px}
+.view.pg .lesson{margin:0;padding-top:12px;padding-bottom:8px}
+/* en pages, les cadres se serrent un peu : un bloc d'un seul tenant (fiche, laboratoire, figure) doit tenir sur l'écran du téléphone */
+.view.pg .box{margin:8px 0;padding:10px 14px 2px}
+.view.pg .box > .tag{margin-bottom:6px}
+.view.pg .lab{margin:8px 0;padding:12px}
+.view.pg .lab-t{margin-bottom:8px}
 .pgnav{position:fixed;left:0;right:0;bottom:var(--tabh,72px);z-index:25;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:7px max(16px,env(safe-area-inset-right,0px)) 7px max(16px,env(safe-area-inset-left,0px))}
 .pgnav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
 .pgnav .btn{justify-content:center;min-height:46px}
 .pg-count{font-weight:700;font-size:.92rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:4.4em;text-align:center}
 html{scroll-padding-top:calc(var(--abh,60px) + 62px)}
+
+/* Exercices : celui qu'on ouvre prend la place de la liste, une question par écran. Contrôle blanc : une question par page.
+   Même barre en haut, mêmes boutons en bas. Pas de grand titre : l'onglet dit déjà où l'on est. */
+html{scroll-padding-bottom:calc(var(--tabh,72px) + 74px)}      /* ce qu'on amène à l'écran ne se glisse pas sous les boutons du bas */
+html.plein{scroll-padding-bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+.exhead-r{display:flex;align-items:center;gap:10px;min-height:54px;padding:6px 0}
+.ex-where{flex:1 1 auto;min-width:0;font-family:var(--f-display);font-weight:700;font-size:1rem;line-height:1.2;color:var(--blue-ink);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.ex-back{flex:none;width:44px;padding:0;justify-content:center}
+.ex-num{flex:none;min-width:38px;height:36px;padding:0 6px;border-radius:10px;font-size:.95rem}
+.ex-num.done{background:var(--up);color:#fff}
+.exhead-r .stmt-b{flex:none}
+.t-rep{flex:none;font-weight:700;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.view.serre{margin-bottom:-26px}      /* la marge du bas sert au contenu : la question tient à l'écran */
+.view.serre > .summary{margin-top:0}
+.view.one{margin-top:-8px;margin-bottom:0;padding-bottom:28px}
+/* un exercice ouvert prend tout l'écran : les onglets s'effacent, les boutons Précédent / Suivant descendent en bas */
+html.plein .tabbar{display:none}
+html.plein .pgnav{bottom:0;padding-bottom:calc(7px + env(safe-area-inset-bottom,0px))}
+html.plein main{padding-bottom:calc(39px + env(safe-area-inset-bottom,0px))}
+.view.one > .summary,.view.one > .ex-filter,.view.one .ghead,.view.one .exo:not(.open),.view.one .btag{display:none}
+.view.one .exo{margin:0}
+.view.one .exo-h{display:none}      /* le numéro et le titre sont dans la barre du haut */
+.view.one .exo-b{border-top:0;padding:12px 14px 8px}
+.view.one .choices{gap:7px}
+.view.one .exo-b > .stmt{margin-top:0}
+.view.one .part{border-top:0;padding:0 0 4px}
+.view.one .stmt:not(.pg-off) ~ .part,.view.one .efig:not(.pg-off) ~ .part{border-top:1px solid var(--line);margin-top:10px;padding-top:14px}      /* un trait seulement sous l'énoncé affiché */
+.stmt-b[aria-expanded="true"]{background:var(--blue-soft);border-color:var(--blue-mid);color:var(--blue-ink)}
+.view.one .part.juste{margin-bottom:-4px}      /* une question qui dépasse de quelques pixels se resserre pour tenir à l'écran */
+.view.one .part.juste .pq{margin-bottom:5px}
+.view.one .part.juste .pt{line-height:1.46}
+.view.one .part.juste .choices{gap:4px}
+.view.one .part.juste .choice{padding:8px 14px;min-height:46px;line-height:1.3}
+.view.one .part.juste .ans{gap:6px}
+.view.one .part.juste .tools{margin-top:6px}
+.part.vu .selfhow{display:none}      /* la solution est affichée : la consigne « fais-le sur ton cahier » a fait son temps */
+.trhead .chips{margin:0 -16px;padding:8px 16px}
+.view.pg .tr-card{margin:0}
+.tr-card.juste{padding:12px 16px 8px}
+.tr-card.juste .qtype{margin-bottom:5px}
+.tr-card.juste .qtext{margin-bottom:6px}
+.tr-card.juste .part{padding:8px 0 2px}
+.tr-card.juste .choices{gap:5px}
+.tr-card.juste .choice{padding:8px 14px;min-height:46px}
+.tr-card.juste .ans{gap:6px 8px}
+.tr-card.juste .tools{margin-top:6px}
+.tr-nav{grid-template-columns:minmax(0,1fr) auto}
+.tr-stats{display:flex;flex-wrap:wrap;gap:0 12px;font-size:.8rem;font-weight:700;line-height:1.4;color:var(--muted)}
+.tr-stats > span{white-space:nowrap}
+.tr-stats b{font-family:var(--f-display);font-size:1.1em;color:var(--ink)}
+.view.pg .test-box{margin:0}
+.view.pg .tq{padding:0;border:0}
+.tq.juste .qtext{margin-bottom:6px}
+.tq.juste .choices{gap:4px}
+.tq.juste .choice{padding:7px 12px;min-height:44px;line-height:1.28}
+.test-intro .best{margin:12px 0 0}
+.test-intro .best:empty{display:none}
+.t-aide{margin:0 0 8px;font-size:.92rem;font-weight:700;color:var(--muted)}
+.tfin .tools,.test-res .tools{align-items:center;margin-top:14px}
+.test-res .score{margin-top:0;padding:14px}
+.test-res .score .coach{--owl-w:84px}
+.t-nums{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0 4px}
+.t-num{min-height:44px;padding:0;border-radius:12px;border:1.5px dashed var(--line2);background:#fff;color:var(--muted);font-family:var(--f-display);font-weight:700;font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.t-num.on{border-style:solid;border-color:var(--blue);background:var(--blue-soft);color:var(--blue-ink)}
+.t-num.ok{border-style:solid;border-color:var(--up);background:var(--up-soft);color:var(--up-ink)}
+.t-num.ko{border-style:solid;border-color:var(--down);background:var(--down-soft);color:var(--down-ink)}
+.t-num i{font-style:normal;font-size:.86em}
 
 /* Accueil : la liste des chapitres */
 body.at-home .tabbar{display:none}
@@ -307,8 +375,8 @@ html[data-lang="both"] .chap-s .it{display:block;color:var(--owl-dark)}
 .exo-n.plus{background:var(--good-soft);color:var(--good)}
 
 /* Réponse à cases */
-.ans.fill{display:grid;gap:12px;justify-items:start}
-.ans.fill .al{width:auto}
+.ans.fill{gap:12px}      /* le bouton Vérifier se place à côté des cases quand il y a la place, dessous sinon */
+.ans.fill .al{flex:0 0 100%}
 .fexp{font-size:1.22rem;line-height:1.5;max-width:100%}
 .fexp .sbx{white-space:nowrap}
 .ans.fill input.bx{min-height:46px;padding:6px 4px;margin:3px 2px;vertical-align:middle}

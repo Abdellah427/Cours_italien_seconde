@@ -1,5 +1,6 @@
-"""Teste toute l'application dans un navigateur à 390 px : chaque exercice de chaque chapitre (pièges, signe, bonne réponse),
-l'entraînement et le contrôle recalculés à partir de l'énoncé affiché, la navigation, les langues, le débordement.
+"""Teste toute l'application dans un navigateur à 390 px, avec les marges d'un iPhone 13 : chaque exercice de chaque chapitre
+(pièges, signe, bonne réponse), l'entraînement et le contrôle recalculés à partir de l'énoncé affiché, la navigation, les langues,
+le débordement, et les pages (cours, exercices, contrôle blanc) : rien à faire défiler, tout le contenu affiché une fois.
 Usage : python3 outils/teste.py (après outils/assemble.py). Nécessite playwright et node.
 Si le navigateur de playwright n'est pas à l'endroit habituel : CHROMIUM=/chemin/vers/chromium python3 outils/teste.py"""
 import re, json, math, subprocess, sys, os, glob
@@ -309,7 +310,7 @@ def qcm_c3(pg, q, fr):
         return ('test', lambda o: ev(o) == v)
     return None
 
-compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0, 'pages': 0}
+compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0, 'pages': 0, 'pages_exos': 0, 'pages_controle': 0}
 
 def rangees(pg, calc):
     """Les rangées d'un calcul posé (bloc .calc) : ('eq', membre de gauche, « = suite ») ou ('expr', expression seule)."""
@@ -474,13 +475,15 @@ PG_ETAT = r"""(l) => { const v = l.closest('.view'), c = v.querySelector('.pg-co
 PG_SUIVANT = "(l) => l.closest('.view').querySelector('.pg-next').click()"
 PG_PRECEDENT = "(l) => l.closest('.view').querySelector('.pg-prev').click()"
 # Avant de tourner les pages d'une partie : tout ce qui se lit quand rien n'est caché, dans la langue affichée
+# (noté sur les éléments eux-mêmes : la page peut gagner ou perdre des éléments entre deux relevés, par exemple la chouette qui vient féliciter)
 PG_REPERE = r"""(l) => { const off = [...l.querySelectorAll('.pg-off')]; off.forEach(e => e.classList.remove('pg-off'));
-  const els = [...l.querySelectorAll('*')]; window.__pgv = els.map(() => 0);
-  window.__pgb = els.map(e => !!e.offsetParent && [...e.childNodes].some(n => n.nodeType === 3 && /\S/.test(n.nodeValue)) && !e.closest('.tag, thead, .go-t'));
-  off.forEach(e => e.classList.add('pg-off')); return window.__pgb.filter(Boolean).length; }"""
-PG_VU = "(l) => { [...l.querySelectorAll('*')].forEach((e, i) => { if (window.__pgb[i] && e.offsetParent) window.__pgv[i]++; }); return 0; }"
+  let n = 0;
+  l.querySelectorAll('*').forEach(e => { e.__vu = 0;
+    e.__lu = !!e.offsetParent && [...e.childNodes].some(n => n.nodeType === 3 && /\S/.test(n.nodeValue)) && !e.closest('.tag, thead, .go-t, .ph'); if (e.__lu) n++; });
+  off.forEach(e => e.classList.add('pg-off')); return n; }"""
+PG_VU = "(l) => { l.querySelectorAll('*').forEach(e => { if (e.__lu && e.offsetParent) e.__vu++; }); return 0; }"
 PG_BILAN = r"""(l) => { const out = [];
-  [...l.querySelectorAll('*')].forEach((e, i) => { if (window.__pgb[i] && window.__pgv[i] !== 1) out.push((window.__pgv[i] ? 'affiché sur ' + window.__pgv[i] + ' pages : ' : 'jamais affiché : ') + e.textContent.trim().replace(/\s+/g, ' ').slice(0, 50)); });
+  l.querySelectorAll('*').forEach(e => { if (e.__lu && e.__vu !== 1) out.push((e.__vu ? 'affiché sur ' + e.__vu + ' pages : ' : 'jamais affiché : ') + e.textContent.trim().replace(/\s+/g, ' ').slice(0, 50)); });
   return out.slice(0, 5); }"""
 def tourne_pages(pg, lesson, ou, forme=None):
     """Tourne toutes les pages d'une partie du cours, affichée à sa première page. Chaque page : rien à faire défiler, rien qui dépasse,
@@ -505,6 +508,141 @@ def tourne_pages(pg, lesson, ou, forme=None):
     chk(abs(barre - 100) < 0.6, '%s : à la dernière page la barre doit être pleine (%s %%)' % (ou, barre))
     for x in pg.evaluate(PG_BILAN, lesson): fails.append('%s : %s' % (ou, x))
     return total
+
+# ---------- Les exercices en pages ----------
+# Un exercice ouvert prend la place de la liste : son numéro et son titre en haut, la barre, puis l'énoncé et une question par page.
+CLIC = "(s) => { const b = document.querySelector(s); if (b && b.getClientRects().length) b.click(); return !!b; }"
+X_ETAT = r"""(v) => { const art = v.querySelector('.exo.open'), de = document.documentElement;
+  if (!art) return null;
+  const c = v.querySelector('.pg-count').textContent.split('/').map(Number), nav = v.querySelector('.pgnav').getBoundingClientRect();
+  const vus = (s) => [...art.querySelectorAll(s)].filter(e => e.offsetParent);
+  return { id: art.id.slice(2), k: c[0], n: c[1], barre: parseFloat(v.querySelector('.pgbar i').style.width) || 0,
+    sous: Math.round(art.getBoundingClientRect().bottom - nav.top), haut: de.scrollHeight - innerHeight, large: de.scrollWidth - de.clientWidth,
+    texte: art.innerText.trim().length, dessin: vus('svg, input').length > 0, questions: vus('.part').map(p => Number(p.dataset.j)), tete: vus('.exo-h').length,
+    premier: v.querySelector('.pg-prev').disabled, suite: v.querySelector('.pg-next-t').innerText.trim(),
+    num: v.querySelector('.ex-num').textContent.trim(), carte: art.querySelector('.exo-n').textContent.trim(), titre: v.querySelector('.ex-where').innerText.trim(),
+    enonce: !v.querySelector('.stmt-b').hidden, vuEnonce: vus('.stmt *').length,
+    depasse: [...art.querySelectorAll('*')].filter(n => { const r = n.getBoundingClientRect(); return r.width && r.right > de.clientWidth + 1; }).map(n => n.tagName + '.' + n.className).slice(0, 3) }; }"""
+def ouvre_exo(pg, V, eid): pg.evaluate("(s) => document.querySelector(s).click()", '#x-%s .exo-h' % eid)
+def liste_exos(pg, V): pg.evaluate(CLIC, V + ' .ex-back')
+def va_a(pg, V, el, w, maxi=14):
+    """Dans l'exercice ouvert, tourne les pages jusqu'à ce que l'élément soit affiché."""
+    for _ in range(maxi):
+        if el.is_visible(): return True
+        pg.evaluate(CLIC, V + ' .pg-next')
+    fails.append(w + ' : introuvable en tournant les pages de l’exercice')
+    return False
+def tourne_exo(pg, V, eid, rang, total, ou, barre, forme=None):
+    """Tourne toutes les pages d'un exercice ouvert à sa première page. Chaque page : rien à faire défiler, rien sous les boutons du bas,
+    quelque chose à lire, une seule question, la barre qui avance ; sur l'ensemble : tout le contenu est affiché une fois et une seule."""
+    vue, art = pg.query_selector(V), pg.query_selector('#x-' + eid)
+    pg.evaluate(PG_REPERE, art)
+    n, bouton = 0, False
+    while n < 40:
+        e = pg.evaluate(X_ETAT, vue)
+        if not e or e['id'] != eid: break
+        n += 1
+        w = '%s page %d' % (ou, n)
+        chk(e['k'] == rang and e['n'] == total and e['num'] == e['carte'], '%s : compteur %s / %s, numéro %s (attendu %s / %s, numéro %s)' % (w, e['k'], e['n'], e['num'], rang, total, e['carte']))
+        chk(e['large'] <= 0 and not e['depasse'], '%s : débordement horizontal %s %s' % (w, e['large'], e['depasse']))
+        chk(e['haut'] <= 0 and e['sous'] <= 0, '%s : page à faire défiler (%s px, %s px sous les boutons)' % (w, e['haut'], e['sous']))
+        chk(e['texte'] > 0 or e['dessin'], w + ' : page vide')
+        chk(len(e['questions']) <= 1, '%s : plusieurs questions sur la même page %s' % (w, e['questions']))
+        chk(e['tete'] == 0 and len(e['titre']) > 2, '%s : le titre de l’exercice doit être dans la barre du haut' % w)
+        chk(e['barre'] > barre, '%s : la barre ne se remplit pas (%s puis %s)' % (w, barre, e['barre'])); barre = e['barre']
+        chk(n > 1 or rang > 1 or e['premier'], w + ' : « Précédent » doit être inactif à la toute première page')
+        pg.evaluate(PG_VU, art)
+        if forme: forme(art, w)
+        if e['enonce'] and not bouton:      # le bouton « Énoncé » fait réapparaître l'énoncé, puis le retire
+            bouton = True
+            pg.evaluate(CLIC, V + ' .stmt-b'); e2 = pg.evaluate(X_ETAT, vue)
+            chk(e2['vuEnonce'] > e['vuEnonce'], w + ' : le bouton « Énoncé » n’affiche pas l’énoncé')
+            pg.evaluate(CLIC, V + ' .stmt-b'); e3 = pg.evaluate(X_ETAT, vue)
+            chk(e3['vuEnonce'] == e['vuEnonce'] and e3['questions'] == e['questions'], w + ' : un second appui sur « Énoncé » doit le retirer')
+        compte['pages_exos'] += 1
+        pg.evaluate(CLIC, V + ' .pg-next')
+    chk(n > 0, ou + ' : l’exercice ne s’ouvre pas')
+    for x in pg.evaluate(PG_BILAN, art): fails.append('%s : %s' % (ou, x))
+    return barre
+
+# ---------- Le contrôle blanc en pages ----------
+T_ETAT = r"""(v) => { const b = v.querySelector('.test-box'), de = document.documentElement, c = v.querySelector('.pg-count').textContent.split('/').map(Number);
+  const vus = (s) => [...b.querySelectorAll(s)].filter(e => e.offsetParent);
+  return { k: c[0], n: c[1], barre: parseFloat(v.querySelector('.pgbar i').style.width) || 0, haut: de.scrollHeight - innerHeight, large: de.scrollWidth - de.clientWidth,
+    texte: b.innerText.trim().length, questions: vus('.tq').map(q => Number(q.dataset.i)), choix: vus('.choice').length, rep: v.querySelector('.t-rep').innerText.trim(),
+    premier: v.querySelector('.pg-prev').disabled, dernier: v.querySelector('.pg-next').disabled, suite: v.querySelector('.pg-next-t').innerText.trim(),
+    corriger: vus('.test-go').length, nums: vus('.t-num').map(n => n.className.replace('t-num', '').trim()), score: (vus('.score .big')[0] || { textContent: '' }).textContent.trim(),
+    depasse: [...b.querySelectorAll('*')].filter(n => { const r = n.getBoundingClientRect(); return r.width && r.right > de.clientWidth + 1; }).map(n => n.tagName + '.' + n.className).slice(0, 3) }; }"""
+def controle_pages(pg, ch, ou):
+    """Un contrôle blanc complet, page par page : la consigne, une question par page, la page « Corriger », puis le résultat et les corrections."""
+    C = '#v-controle-' + ch
+    pg.goto(URL + '#' + ch + '/controle'); pg.wait_for_timeout(120)
+    # un sujet neuf : on corrige celui qui est en cours s'il y en a un, puis « Nouveau contrôle »
+    pg.evaluate("""(C) => { const go = document.querySelector(C + ' .test-go');
+      if (go && !go.disabled) { document.querySelectorAll(C + ' .tq').forEach(q => q.querySelector('.choice').click()); go.click(); }
+      document.querySelector(C + ' .test-new').click(); }""", C)
+    pg.wait_for_timeout(60)
+    vue, boite = pg.query_selector(C), pg.query_selector(C + ' .test-box')
+    def page(w, barre):
+        e = pg.evaluate(T_ETAT, vue)
+        chk(e['large'] <= 0 and not e['depasse'], '%s : débordement horizontal %s %s' % (w, e['large'], e['depasse']))
+        chk(e['haut'] <= 0, '%s : page à faire défiler (%s px)' % (w, e['haut']))
+        chk(e['texte'] > 0, w + ' : page vide')
+        chk(e['barre'] > barre, '%s : la barre ne se remplit pas (%s puis %s)' % (w, barre, e['barre']))
+        compte['pages_controle'] += 1
+        return e
+    # avant la correction : 12 pages, une question par page
+    e = page(ou + ' contrôle page 1', -1)
+    chk(e['k'] == 1 and e['n'] == 12 and e['premier'] and not e['questions'], '%s contrôle : la première page est la consigne, sur 12 pages (%s)' % (ou, e))
+    chk(e['rep'].startswith('0 / 10'), '%s contrôle : en haut, « 0 / 10 réponses » au départ (%s)' % (ou, e['rep']))
+    faites = 0
+    for i in range(10):
+        pg.click(C + ' .pg-next'); e = page('%s contrôle question %d' % (ou, i + 1), e['barre'])
+        chk(e['k'] == i + 2 and e['questions'] == [i] and e['choix'] >= 2, '%s contrôle : la page %d doit montrer la question %d seule (%s)' % (ou, i + 2, i + 1, e))
+        if i not in (3, 7):
+            pg.click('%s .tq[data-i="%d"] .choice:nth-child(%d)' % (C, i, i % e['choix'] + 1)); faites += 1
+            r = pg.evaluate(T_ETAT, vue)['rep']
+            chk(r.startswith('%d / 10' % faites), '%s contrôle : le compte des réponses en haut (%s, attendu %d)' % (ou, r, faites))
+    pg.click(C + ' .pg-next'); e = page(ou + ' contrôle dernière page', e['barre'])
+    chk(e['k'] == 12 and e['corriger'] == 1 and e['dernier'] and not e['questions'], '%s contrôle : la dernière page porte le bouton « Corriger » et rien après (%s)' % (ou, e))
+    chk(len(e['nums']) == 10 and [n for n, c in enumerate(e['nums']) if 'on' not in c.split()] == [3, 7], '%s contrôle : les numéros sans réponse doivent être 4 et 8 (%s)' % (ou, e['nums']))
+    chk(abs(e['barre'] - 100) < 0.6, '%s contrôle : barre pleine à la dernière page (%s)' % (ou, e['barre']))
+    # un numéro ramène à sa question
+    pg.click(C + ' .t-num[data-q="3"]'); e = pg.evaluate(T_ETAT, vue)
+    chk(e['k'] == 5 and e['questions'] == [3], '%s contrôle : le numéro 4 doit ouvrir la page de la question 4 (%s)' % (ou, e))
+    pg.click(C + ' .tq[data-i="3"] .choice:nth-child(1)')
+    for _ in range(7): pg.click(C + ' .pg-next')
+    e = pg.evaluate(T_ETAT, vue)
+    chk(e['k'] == 12 and [n for n, c in enumerate(e['nums']) if 'on' not in c.split()] == [7], '%s contrôle : après une réponse de plus, seul le numéro 8 reste vide (%s)' % (ou, e['nums']))
+    pg.click(C + ' .test-go'); pg.wait_for_timeout(60)
+    # après la correction : le résultat d'abord, puis chaque question et son explication
+    e = page(ou + ' contrôle résultat', -1)
+    pts = int(e['score'].split('/')[0]) if '/' in e['score'] else -1
+    chk(e['k'] == 1 and e['premier'] and pts >= 0 and e['rep'] == e['score'], '%s contrôle : après « Corriger », la première page donne la note (%s)' % (ou, e))
+    chk(len(e['nums']) == 10 and 2 * len([c for c in e['nums'] if 'ok' in c.split()]) == pts and [n for n, c in enumerate(e['nums']) if 'vide' in c.split()] == [7],
+        '%s contrôle : les numéros du résultat (justes, faux, sans réponse) ne correspondent pas à la note %s : %s' % (ou, e['score'], e['nums']))
+    total = e['n']
+    chk(total >= 11, '%s contrôle : le résultat et dix corrections font au moins 11 pages (%s)' % (ou, total))
+    pg.click(C + ' .t-num[data-q="7"]'); e7 = pg.evaluate(T_ETAT, vue)
+    chk(e7['questions'] == [7], '%s contrôle : le numéro 8 du résultat doit ouvrir la correction de la question 8 (%s)' % (ou, e7))
+    for _ in range(total): pg.click(C + ' .pg-prev') if not pg.evaluate(T_ETAT, vue)['premier'] else None
+    pg.evaluate(PG_REPERE, boite)
+    e = pg.evaluate(T_ETAT, vue); barre = -1
+    vues = set()
+    for k in range(1, total + 1):
+        e = page('%s contrôle corrigé page %d/%d' % (ou, k, total), barre); barre = e['barre']
+        chk(e['k'] == k and e['n'] == total, '%s contrôle corrigé : compteur %s / %s à la page %d' % (ou, e['k'], e['n'], k))
+        chk(len(e['questions']) <= 1, '%s contrôle corrigé page %d : plusieurs questions %s' % (ou, k, e['questions']))
+        vues.update(e['questions'])
+        pg.evaluate(PG_VU, boite)
+        verifie_pose(pg, boite, '%s %s contrôle corrigé page %d' % (ou, ch, k))
+        if k < total: pg.click(C + ' .pg-next')
+    chk(vues == set(range(10)), '%s contrôle corrigé : questions vues %s' % (ou, sorted(vues)))
+    for x in pg.evaluate(PG_BILAN, boite): fails.append('%s contrôle corrigé : %s' % (ou, x))
+    chk(e['suite'] in ('Nouveau contrôle', 'Nuova verifica') and not e['dernier'], '%s contrôle corrigé : à la dernière page, le bouton propose un nouveau contrôle (%s)' % (ou, e['suite']))
+    pg.click(C + ' .pg-next'); pg.wait_for_timeout(60)
+    e = pg.evaluate(T_ETAT, vue)
+    chk(e['k'] == 1 and e['n'] == 12 and e['rep'].startswith('0 / 10'), '%s contrôle : « Nouveau contrôle » doit ouvrir un sujet neuf à sa première page (%s)' % (ou, e))
 
 # Par chapitre : recalcul de l'entraînement, recalcul du contrôle, thèmes de l'entraînement
 RECALCUL = {'c10': (tr_c10, qcm_c10, ['cm', 'succ', 'recip', 'init', 'mix']),
@@ -531,6 +669,12 @@ with sync_playwright() as p:
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' and 'ERR_' not in m.text and 'Failed to load' not in m.text else None)
     pg.goto(URL); pg.wait_for_timeout(300)
     pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(300)
+    # les marges de l'iPhone 13 (encoche en haut, barre d'accueil en bas) : la place disponible pour une page est celle du téléphone
+    try:
+        pg.context.new_cdp_session(pg).send('Emulation.setSafeAreaInsetsOverride', {'insets': {'top': 47, 'bottom': 34, 'left': 0, 'right': 0}})
+        pg.wait_for_timeout(100)
+    except Exception as ex: info.append('marges de l’iPhone non émulées : ' + str(ex)[:80])
+    info.append('marge haute de la barre : ' + pg.evaluate("getComputedStyle(document.querySelector('.appbar')).paddingTop"))
     pg.evaluate(POLICES); pg.wait_for_timeout(300)
     chaps = pg.evaluate("[...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch)")
     info.append('chapitres : ' + ', '.join(chaps))
@@ -542,15 +686,23 @@ with sync_playwright() as p:
         info.append('%s : %d exercices, %d questions' % (ch, len(exos), sum(len(e['parts']) for e in exos)))
         # 1. Chaque question des exercices : pièges, puis bonne réponse
         pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(200)
+        # à l'ouverture, la liste est courte : le premier groupe où il reste un exercice à faire
+        f0, n0 = pg.evaluate("(V) => [document.querySelector(V + ' .ex-filter .chip[aria-pressed=\"true\"]').dataset.f, document.querySelectorAll(V + ' .exo').length]", V)
+        chk(f0 != 'all' and n0 == len([e for e in exos if e['group'] == f0]) and n0 > 0, '%s : à l’ouverture, la liste doit montrer un seul groupe (%s, %d cartes)' % (ch, f0, n0))
+        pg.click(V + ' .ex-filter .chip[data-f="all"]')
+        chk(len(pg.query_selector_all(V + ' .exo')) == len(exos), ch + ' : « Tous » doit lister tous les exercices')
         for e in exos:
             art = pg.query_selector('#x-' + e['id'])
             if not art: fails.append('carte absente ' + e['id']); continue
-            art.query_selector('.exo-h').click()
+            ouvre_exo(pg, V, e['id'])
+            st = pg.evaluate(X_ETAT, pg.query_selector(V))
+            chk(st and st['id'] == e['id'] and pg.is_hidden(V + ' .summary') and pg.is_hidden('.tabbar'), e['id'] + ' : l’exercice touché doit prendre tout l’écran (liste et onglets effacés)')
             for j, part in enumerate(e['parts']):
                 box = art.query_selector('.part[data-j="%d"]' % j)
                 w = '%s q%d' % (e['id'], j + 1)
                 if part['kind'] == 'num':
                     inp = box.query_selector('input')
+                    va_a(pg, V, inp, w)
                     for t in part.get('traps', []):
                         inp.fill(frnum(t['v'], 4)); box.query_selector('.chk').click()
                         fb = norm(box.query_selector('.fbw').inner_text())
@@ -566,6 +718,7 @@ with sync_playwright() as p:
                     goods = part['correct'] if isinstance(part['correct'], list) else [part['correct']]
                     btns = box.query_selector_all('.choice')
                     chk(len(btns) == len(part['choices']), w + ' : nombre de boutons')
+                    va_a(pg, V, btns[0], w)
                     for k in range(len(btns)):
                         if k in goods: continue
                         btns[k].click()
@@ -579,24 +732,31 @@ with sync_playwright() as p:
                     chk('solved' in (box.get_attribute('class') or ''), w + ' pas marqué réussi')
                 elif part['kind'] == 'self':
                     chk(box.query_selector('.panel.sol').is_hidden(), w + ' : la solution doit être cachée au départ')
+                    va_a(pg, V, box.query_selector('.sb'), w)
+                    chk(box.query_selector('.selfhow').is_visible(), w + ' : la consigne « sur ton cahier » doit être affichée avant la solution')
                     if part.get('hint'):
                         box.query_selector('.hb').click()
                         chk(box.query_selector('.panel.hint').is_visible(), w + " : l'indice ne s'ouvre pas")
                     box.query_selector('.sb').click()
                     chk(box.query_selector('.panel.sol').is_visible(), w + " : la solution ne s'ouvre pas")
+                    va_a(pg, V, box.query_selector('.sok'), w)      # la solution peut continuer sur les pages suivantes : les deux boutons sont à la fin
                     box.query_selector('.sok').click()
                     chk('done' in (art.get_attribute('class') or ''), w + ' pas marqué réussi')
+                    chk('réussi' in box.query_selector('.selfq .fbw').inner_text(), w + ' : le message de réussite doit s’afficher sous les deux boutons')
                     box.query_selector('.sko').click()
                     chk('done' not in (art.get_attribute('class') or ''), w + ' : « À refaire » ne retire pas la réussite')
                     box.query_selector('.sok').click()
                 else:
                     fails.append(w + ' : type de question inconnu du test : ' + str(part['kind']))
             chk('done' in (art.get_attribute('class') or ''), e['id'] + ' pas marqué réussi')
+            chk('done' in (pg.get_attribute(V + ' .ex-num', 'class') or ''), e['id'] + ' : en haut, le numéro doit passer au vert quand l’exercice est réussi')
             ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
             chk(ov <= 0, 'débordement exercice %s : %s' % (e['id'], ov))
-            pg.evaluate("(a) => a.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false)", art)
+            # mise en forme : tout l'exercice affiché d'un coup (toutes les pages, indices et solutions)
+            pg.evaluate("(a) => { a.querySelectorAll('.pg-off').forEach(x => x.classList.remove('pg-off')); a.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false); }", art)
             verifie_pose(pg, '#x-' + e['id'], 'exercice ' + e['id'])
-            art.query_selector('.exo-h').click()
+            liste_exos(pg, V)
+            chk(pg.is_visible(V + ' .summary') and pg.is_visible('.tabbar') and not pg.query_selector(V + ' .exo.open'), e['id'] + ' : la flèche du haut doit ramener à la liste et aux onglets')
         chk(pg.inner_text(V + ' .ex-count') == '%d / %d' % (len(exos), len(exos)), ch + ' compteur : ' + pg.inner_text(V + ' .ex-count'))
         pg.reload(); pg.wait_for_timeout(300)
         chk(pg.inner_text(V + ' .ex-count') == '%d / %d' % (len(exos), len(exos)), ch + ' progression non sauvegardée')
@@ -614,6 +774,9 @@ with sync_playwright() as p:
                 n_tr += 1
                 card = pg.query_selector(T + ' .tr-card')
                 fr = norm(card.query_selector('.qtext').inner_text())
+                # la question tient au-dessus du bouton « Nouvelle question », toujours visible en bas
+                sous = pg.evaluate("(T) => { const v = document.querySelector(T); return Math.round(v.querySelector('.tr-card').getBoundingClientRect().bottom - v.querySelector('.pgnav').getBoundingClientRect().top); }", T)
+                chk(sous <= 0 and pg.is_visible(T + ' .tr-next'), '%s entraînement : la question passe sous le bouton du bas (%s px) : %s' % (ch, sous, fr[:60].replace('\n', ' ')))
                 try: exp = tr_exp(pg, card)
                 except Exception as ex: exp = None; fails.append('%s entraînement, erreur de lecture : %s | %s' % (ch, fr[:80], ex))
                 if exp is None: fails.append('%s entraînement non lu : %s' % (ch, fr[:90])); pg.click(T + ' .tr-next'); continue
@@ -641,6 +804,9 @@ with sync_playwright() as p:
                 verifie_pose(pg, T + ' .tr-card', '%s entraînement « %s »' % (ch, fr[:50].replace('\n', ' ')))
                 pg.click(T + ' .tr-next')
         info.append('%s entraînement juste : %d / %d' % (ch, n_ok, n_tr))
+        # la barre du haut se remplit en cinq bonnes réponses de suite
+        serie, barre = pg.evaluate("(T) => { const v = document.querySelector(T); return [Number(v.querySelector('.tr-streak').textContent), parseFloat(v.querySelector('.pgbar i').style.width) || 0]; }", T)
+        chk(abs(barre - (((serie - 1) % 5 + 1) * 20 if serie else 0)) < 0.5, '%s entraînement : barre à %s %% pour une série de %s' % (ch, barre, serie))
         # 3. Contrôle blanc : 15 sujets, bonne réponse recalculée
         pg.goto(URL + '#' + ch + '/controle'); pg.wait_for_timeout(200)
         C = '#v-controle-' + ch
@@ -648,8 +814,10 @@ with sync_playwright() as p:
         for s in range(15):
             qs = pg.query_selector_all(C + ' .tq')
             chk(len(qs) == 10, '%s : le contrôle doit avoir 10 questions, il en a %d' % (ch, len(qs)))
-            for q in qs: q.query_selector_all('.choice')[0].click()
-            pg.click(C + ' .test-go'); pg.wait_for_timeout(50)
+            # les questions sont une par page : on répond et on corrige sans tourner les pages, puis on affiche tout pour relire les corrections
+            pg.evaluate("(C) => { document.querySelectorAll(C + ' .tq').forEach(q => q.querySelector('.choice').click()); document.querySelector(C + ' .test-go').click(); }", C)
+            pg.wait_for_timeout(50)
+            pg.evaluate("(C) => document.querySelectorAll(C + ' .test-box .pg-off').forEach(x => x.classList.remove('pg-off'))", C)
             for q in pg.query_selector_all(C + ' .tq'):
                 fr = re.sub(r'^\d+\.\s*', '', norm(q.query_selector('.qtext .fr').inner_text()))
                 try: exp = qcm_exp(pg, q, fr)
@@ -674,7 +842,7 @@ with sync_playwright() as p:
             ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
             chk(ov <= 0, '%s débordement contrôle corrigé' % ch)
             verifie_pose(pg, C + ' .test-box', '%s contrôle corrigé' % ch)
-            pg.click(C + ' .test-new'); pg.wait_for_timeout(50)
+            pg.evaluate("(C) => document.querySelector(C + ' .test-new').click()", C); pg.wait_for_timeout(50)
         info.append('%s questions de contrôle vérifiées : %d' % (ch, n_q))
     # 4. Navigation : accueil, carte du chapitre, onglets, anciennes adresses
     pg.goto(URL + '#accueil'); pg.wait_for_timeout(150)
@@ -736,6 +904,56 @@ with sync_playwright() as p:
         for v in ['cours', 'exercices', 'entrainement', 'controle']:
             pg.goto(URL + '#' + v); pg.wait_for_timeout(60)
             chk(pg.is_visible('#v-%s-c10' % v), 'ancienne adresse #%s' % v)
+    # 4 ter. Les exercices un par un : série d'un groupe, Précédent / Suivant, retour à la liste, reprise, liens depuis le cours, flèches du clavier
+    for ch in chaps:
+        V = '#v-exercices-' + ch
+        vue = pg.query_selector(V)
+        pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(100)
+        groupes = [g for g in pg.evaluate("(V) => [...document.querySelectorAll(V + ' .ex-filter .chip')].map(c => c.dataset.f)", V) if g not in ('all', 'todo')]
+        g = next(x for x in groupes if len([e for e in data if e['ch'] == ch and e['group'] == x]) >= 3)
+        pg.click(V + ' .ex-filter .chip[data-f="%s"]' % g)
+        ids = pg.evaluate("(V) => [...document.querySelectorAll(V + ' .exo')].map(a => a.id.slice(2))", V)
+        chk(sorted(ids) == sorted(e['id'] for e in data if e['ch'] == ch and e['group'] == g), '%s : la liste du groupe %s' % (ch, g))
+        ouvre_exo(pg, V, ids[0]); e = pg.evaluate(X_ETAT, vue)
+        chk(e and e['id'] == ids[0] and e['k'] == 1 and e['n'] == len(ids) and e['premier'], '%s : premier exercice du groupe %s ouvert (%s)' % (ch, g, e))
+        ouvre_exo(pg, V, ids[0])      # sa carte est cachée : seul le bouton du haut ramène à la liste
+        liste_exos(pg, V)
+        chk(not pg.query_selector(V + ' .exo.open') and pg.is_visible('#x-' + ids[1]) and pg.is_hidden(V + ' .pgnav'), ch + ' : retour à la liste du groupe')
+        ouvre_exo(pg, V, ids[1]); e = pg.evaluate(X_ETAT, vue)
+        chk(e['id'] == ids[1] and e['k'] == 2 and not e['premier'], '%s : deuxième exercice du groupe (%s)' % (ch, e))
+        b1 = e['barre']
+        pg.evaluate(CLIC, V + ' .pg-prev'); e = pg.evaluate(X_ETAT, vue)
+        chk(e['id'] == ids[0] and e['barre'] < b1, '%s : « Précédent » à la première page d’un exercice revient à la fin du précédent (%s)' % (ch, e))
+        pg.evaluate(CLIC, V + ' .pg-next'); e = pg.evaluate(X_ETAT, vue)
+        chk(e['id'] == ids[1] and abs(e['barre'] - b1) < 0.01, '%s : « Suivant » à la dernière page d’un exercice ouvre le suivant à sa première page (%s)' % (ch, e))
+        pg.keyboard.press('ArrowRight'); e2 = pg.evaluate(X_ETAT, vue)
+        chk(e2 and e2['barre'] > e['barre'], ch + ' : la flèche droite du clavier tourne la page')
+        pg.keyboard.press('ArrowLeft'); e2 = pg.evaluate(X_ETAT, vue)
+        chk(e2['id'] == ids[1] and abs(e2['barre'] - b1) < 0.01, ch + ' : la flèche gauche du clavier revient')
+        # reprise : on va voir le cours (un renvoi de l'exercice y mène), on revient au même exercice, à la même page
+        pg.goto(URL + '#' + ch + '/cours'); pg.wait_for_timeout(60)
+        chk(pg.is_visible('.tabbar'), ch + ' : hors d’un exercice ouvert, les onglets doivent être affichés')
+        pg.click('.tab[data-v="exercices"]'); pg.wait_for_timeout(60)
+        e2 = pg.evaluate(X_ETAT, vue)
+        chk(e2 and e2['id'] == ids[1] and abs(e2['barre'] - b1) < 0.01 and pg.is_hidden('.tabbar'), '%s : en revenant aux exercices on retrouve son exercice (%s)' % (ch, e2))
+        # le dernier exercice de la série : le bouton ramène à la liste
+        liste_exos(pg, V); ouvre_exo(pg, V, ids[-1])
+        for _ in range(30):
+            e = pg.evaluate(X_ETAT, vue)
+            if not e or e['suite'] in ('Liste', 'Lista'): break
+            pg.evaluate(CLIC, V + ' .pg-next')
+        chk(e and e['id'] == ids[-1] and e['k'] == len(ids) and abs(e['barre'] - 100) < 0.6, '%s : à la dernière page de la série, barre pleine et bouton « Liste » (%s)' % (ch, e))
+        pg.evaluate(CLIC, V + ' .pg-next')
+        chk(not pg.query_selector(V + ' .exo.open') and pg.is_visible(V + ' .summary'), ch + ' : après le dernier exercice, retour à la liste')
+        # un renvoi du cours ouvre l'exercice, dans la liste de son groupe
+        cible = next(e for e in data if e['ch'] == ch and e['group'] != g)
+        pg.goto(URL + '#' + ch + '/cours'); pg.wait_for_timeout(60)
+        pg.evaluate("(id) => { const a = document.createElement('button'); a.setAttribute('data-exo', id); document.querySelector('main').appendChild(a); a.click(); a.remove(); }", cible['id'])
+        pg.wait_for_timeout(80)
+        e = pg.evaluate(X_ETAT, vue)
+        f = pg.evaluate("(V) => document.querySelector(V + ' .ex-filter .chip[aria-pressed=\"true\"]').dataset.f", V)
+        chk(pg.is_visible(V) and e and e['id'] == cible['id'] and f == cible['group'], '%s : un renvoi vers l’exercice %s doit l’ouvrir dans son groupe (%s, filtre %s)' % (ch, cible['id'], e and e['id'], f))
+        liste_exos(pg, V)
     # 5. Langues et débordement : accueil, chaque vue, chaque partie des cours en plusieurs pages
     for l in ['fr', 'it', 'both']:
         pg.click('.seg button[data-lang="%s"]' % l)
@@ -755,19 +973,28 @@ with sync_playwright() as p:
                 pg.click(chip); pg.click(chip)                 # un second appui sur la partie affichée ramène à sa première page
                 chk(pg.is_visible('#' + go), '%s : la partie %s ne s’affiche pas' % (ch, go))
                 tourne_pages(pg, pg.query_selector('#' + go), '%s %s %s' % (l, ch, go), lambda el, w: verifie_pose(pg, el, w))
-            # tous les exercices ouverts, indices et solutions affichés, dans cette langue
+            # les exercices, page par page, dans cette langue : d'abord tels qu'on les ouvre, puis solutions affichées
+            V = '#v-exercices-' + ch
             pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(120)
-            pg.evaluate("""(ch) => { const v = document.getElementById('v-exercices-' + ch);
-                v.querySelectorAll('.exo-h').forEach(h => { if (h.getAttribute('aria-expanded') !== 'true') h.click(); });
-                v.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false); }""", ch)
-            pg.wait_for_timeout(250)
-            verifie_pose(pg, '#v-exercices-' + ch, '%s exercices %s' % (l, ch))
+            pg.click(V + ' .ex-filter .chip[data-f="all"]')
+            ids = pg.evaluate("(V) => [...document.querySelectorAll(V + ' .exo')].map(a => a.id.slice(2))", V)
+            for etat in ('', ', solutions affichées'):
+                barre = -1
+                for n, eid in enumerate(ids):
+                    ouvre_exo(pg, V, eid)
+                    if etat:
+                        pg.evaluate("(V) => document.querySelectorAll(V + ' .exo.open .sb[aria-expanded=\"false\"]').forEach(b => b.click())", V)
+                        liste_exos(pg, V); ouvre_exo(pg, V, eid)
+                    barre = tourne_exo(pg, V, eid, n + 1, len(ids), '%s %s exercice %s%s' % (l, ch, eid, etat), barre, lambda el, w: verifie_pose(pg, el, w))
+                    liste_exos(pg, V)
             ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
-            chk(ov <= 0, 'débordement %s %s, exercices ouverts : %s' % (l, ch, ov))
+            chk(ov <= 0, 'débordement %s %s, exercices : %s' % (l, ch, ov))
+            # un contrôle blanc complet, page par page, dans cette langue
+            controle_pages(pg, ch, l)
     b.close()
 info.append('lignes de solution relues : %d, calculs d’explication relus : %d' % (compte['lignes'], compte['explications']))
 info.append('mise en forme contrôlée : %d calculs posés, %d formules' % (compte['calculs'], compte['formules']))
-info.append('pages de cours tournées (trois langues) : %d' % compte['pages'])
+info.append('pages tournées dans les trois langues : cours %d, exercices %d, contrôle blanc %d' % (compte['pages'], compte['pages_exos'], compte['pages_controle']))
 print('\n'.join(info))
 print('erreurs JS:', errs)
 print('ÉCHECS:', len(fails))
