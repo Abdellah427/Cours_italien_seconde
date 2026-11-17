@@ -253,6 +253,21 @@ pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;o
 @media (prefers-reduced-motion:reduce){ *{transition:none!important;scroll-behavior:auto!important} }
 
 .toc{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:10px 16px 8px}
+
+/* Cours en pages : rien à faire défiler. En haut, les parties et une barre qui se remplit ; en bas, Précédent et Suivant. */
+.pg-off{display:none!important}
+.view.pg{margin-top:-8px;padding-bottom:36px}      /* avec la marge de la page : la place des boutons du bas */
+.view.pg > .foot{display:none}
+.view.pg > .vhead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pghead{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:0 16px 8px}
+.pghead .toc{position:static;margin:0 -16px;padding:8px 16px 8px}
+.pgbar{height:8px;border-radius:999px;background:#E3E8F1;overflow:hidden}
+.pgbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--up),#2FA468);transition:width .25s}
+.view.pg .lesson{margin:0;padding-top:16px}
+.pgnav{position:fixed;left:0;right:0;bottom:var(--tabh,72px);z-index:25;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:7px max(16px,env(safe-area-inset-right,0px)) 7px max(16px,env(safe-area-inset-left,0px))}
+.pgnav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.pgnav .btn{justify-content:center;min-height:46px}
+.pg-count{font-weight:700;font-size:.92rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:4.4em;text-align:center}
 html{scroll-padding-top:calc(var(--abh,60px) + 62px)}
 
 /* Accueil : la liste des chapitres */

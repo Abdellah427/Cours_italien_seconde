@@ -265,6 +265,21 @@ pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;o
 @media (prefers-reduced-motion:reduce){ *{transition:none!important;scroll-behavior:auto!important} }
 
 .toc{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:10px 16px 8px}
+
+/* Cours en pages : rien à faire défiler. En haut, les parties et une barre qui se remplit ; en bas, Précédent et Suivant. */
+.pg-off{display:none!important}
+.view.pg{margin-top:-8px;padding-bottom:36px}      /* avec la marge de la page : la place des boutons du bas */
+.view.pg > .foot{display:none}
+.view.pg > .vhead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pghead{position:sticky;top:var(--abh,60px);z-index:10;background:var(--bg);margin:0 -16px;padding:0 16px 8px}
+.pghead .toc{position:static;margin:0 -16px;padding:8px 16px 8px}
+.pgbar{height:8px;border-radius:999px;background:#E3E8F1;overflow:hidden}
+.pgbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--up),#2FA468);transition:width .25s}
+.view.pg .lesson{margin:0;padding-top:16px}
+.pgnav{position:fixed;left:0;right:0;bottom:var(--tabh,72px);z-index:25;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:7px max(16px,env(safe-area-inset-right,0px)) 7px max(16px,env(safe-area-inset-left,0px))}
+.pgnav-in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.pgnav .btn{justify-content:center;min-height:46px}
+.pg-count{font-weight:700;font-size:.92rem;color:var(--muted);font-variant-numeric:tabular-nums;min-width:4.4em;text-align:center}
 html{scroll-padding-top:calc(var(--abh,60px) + 62px)}
 
 /* Accueil : la liste des chapitres */
@@ -8288,7 +8303,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
   ];
 
   CHAPS.push({
-    id: 'c3', num: 3, paged: true, sym: '<span class="m"><i>x</i></span>',
+    id: 'c3', num: 3, sym: '<span class="m"><i>x</i></span>',
     title: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     short: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     sub: { fr: 'Fractions, puissances, racines, développer, factoriser, équations, inéquations', it: 'Frazioni, potenze, radici, sviluppare, scomporre, equazioni, disequazioni' },
@@ -8537,66 +8552,277 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     function showBest(){ $('.test-best', vTe).innerHTML = st.bestTest == null ? '' : biIn({ fr: 'Ton meilleur score : ' + st.bestTest + ' / 20', it: 'Il tuo record: ' + st.bestTest + ' / 20' }); }
     function newTest(){ testQs = makeTest(); testDone = false; renderTest(); showBest(); }
 
-    /* ---------- Cours : sommaire, parties ---------- */
+    /* ---------- Cours : des pages qui tiennent à l'écran ---------- */
+    /* Chaque partie du cours est découpée en petites unités (un titre, une paire de paragraphes fr + it, un calcul, une ligne
+       de tableau...) regroupées en pages à la hauteur de l'écran. Rien n'est déplacé dans le document : une page montre ses
+       unités et cache les autres (classe pg-off). En haut, une barre se remplit ; en bas, Précédent et Suivant. */
     var vCo = document.getElementById('v-cours-' + c.id), toc = $('.toc', vCo), lessons = $$('.lesson', vCo);
+    var PG = { L: {}, cur: null, page: 0 };
     function tocMark(id){
       $$('.chip', toc).forEach(function(ch){ var on = ch.dataset.go === id; ch.setAttribute('aria-pressed', String(on)); if (on) toc.scrollLeft = ch.offsetLeft - 24; });
     }
-    function showPart(id){
-      if (!document.getElementById(id)) id = lessons[0].id;
+    function hasText(el){ for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 && /\S/.test(n.nodeValue)) return true; return false; }
+    function isFrame(el){      /* un cadre : on découpe à l'intérieur (encadré, tableau ligne par ligne, liste, série d'exercices) */
+      var k = el.classList, tg = el.tagName;
+      return k.contains('box') || k.contains('tw') || k.contains('sheet') || k.contains('kw') || k.contains('go-ex') || k.contains('go-l') || tg === 'TBODY' ||
+        (tg === 'TABLE' && !k.contains('mult') && !k.contains('bt')) || ((tg === 'UL' || tg === 'OL') && !k.contains('fr') && !k.contains('it'));
+    }
+    function isDecor(el){ var k = el.classList; return k.contains('tag') || k.contains('go-t') || el.tagName === 'THEAD'; }      /* affiché avec son cadre, jamais seul */
+    function numerote(ol){ if (ol.tagName === 'OL') kidsOf(ol).forEach(function(li, n){ li.setAttribute('value', n + 1); }); }      /* un numéro garde sa valeur même si la liste est coupée */
+    function kidsOf(el){ return [].filter.call(el.children, function(x){ return !isDecor(x); }); }
+    function sameShape(a, b){
+      if (a.tagName !== b.tagName || hasText(a) || hasText(b)) return false;
+      var x = kidsOf(a), y = kidsOf(b);
+      return x.length > 0 && x.length === y.length && x.every(function(e, n){ return e.tagName === y[n].tagName; });
+    }
+    /* Une paire fr + it de même forme (deux listes de même longueur, deux blocs des mêmes paragraphes) se découpe élément par élément */
+    function pairUnits(a, b, anc){
+      if ((a.tagName === 'DIV' || a.tagName === 'UL' || a.tagName === 'OL') && sameShape(a, b)){
+        var x = kidsOf(a), y = kidsOf(b), out = [], anc2 = anc.concat([a, b]);
+        numerote(a); numerote(b);
+        x.forEach(function(e, n){ out = out.concat(pairUnits(e, y[n], anc2)); });
+        return out;
+      }
+      return [{ els: [a, b], anc: anc }];
+    }
+    /* Un calcul posé se coupe entre deux calculs (jamais au milieu d'une suite d'égalités ni d'une résolution d'équation) */
+    function calcUnits(calc, anc){
+      var kids = [].slice.call(calc.children), rows = [], n = 0, out = [], cur = null, cont = false, apresLib = false, apresTexte = false;
+      while (n < kids.length){
+        var e = kids[n], k = e.classList, a = kids[n + 1], b = kids[n + 2], r;
+        if (k.contains('cn') && rows.length){ rows[rows.length - 1].els.push(e); n++; continue; }      /* une remarque reste sous son étape */
+        if (!k.contains('cl')){ rows.push({ els: [e], texte: true }); n++; continue; }
+        if (k.contains('seul')){ rows.push({ els: [e], seul: true }); n++; continue; }
+        r = { els: [e], lib: !k.contains('eqv') && !!e.textContent.trim(), suite: k.contains('eqv') };
+        n++;
+        if (a && a.classList.contains('cg')){ r.els.push(a); n++; if (!a.textContent.trim()) r.suite = true; if (b && b.classList.contains('cd')){ r.els.push(b); n++; } }
+        else if (a && a.classList.contains('ce')){ r.els.push(a); n++; if (/^[=≈]/.test(a.textContent.trim())) r.suite = true; }
+        rows.push(r);
+      }
+      var nb = 0;
+      rows.forEach(function(r){
+        var neuf = !cur || r.texte || r.seul || apresTexte || (!apresLib && (r.lib || (!r.suite && (cont || nb >= 6))));
+        if (neuf){ cur = { els: [], anc: anc }; out.push(cur); cont = false; nb = 0; }
+        cur.els = cur.els.concat(r.els); nb++;
+        apresLib = !!r.seul; apresTexte = !!r.texte;
+        if (r.suite) cont = true;
+      });
+      return out;
+    }
+    function unitsOf(el, anc){
+      var out = [], kids = kidsOf(el);
+      numerote(el);
+      for (var n = 0; n < kids.length; n++){
+        var k = kids[n], nx = kids[n + 1];
+        if (k.classList.contains('calc') && k.tagName === 'DIV'){ out = out.concat(calcUnits(k, anc.concat([k]))); continue; }
+        if (isFrame(k) && !hasText(k)){ var sub = unitsOf(k, anc.concat([k])); if (sub.length){ out = out.concat(sub); continue; } }
+        if (k.classList.contains('fr') && nx && nx.classList.contains('it')){ out = out.concat(pairUnits(k, nx, anc)); n++; continue; }
+        out.push({ els: [k], anc: anc });
+      }
+      return out;
+    }
+    function vis(L, n, on){
+      var u = L.units[n];
+      if (u.on === on) return;
+      u.on = on;
+      u.els.forEach(function(e){ e.classList.toggle('pg-off', !on); });
+      u.anc.forEach(function(a){ a._pg = (a._pg || 0) + (on ? 1 : -1); a.classList.toggle('pg-off', a._pg <= 0); });
+    }
+    lessons.forEach(function(l){
+      var units = unitsOf(l, []);
+      units.forEach(function(u, n){
+        var e = u.els[0], h = /^H[34]$/.test(e.tagName);
+        u.id = n;
+        u.brk = h;                                                                                   /* un titre commence une page */
+        u.tete = e.classList.contains('lhead');
+        u.keep = h || u.tete || e.classList.contains('lbl') || /[:：]\s*$/.test(e.textContent);      /* jamais en bas de page : la suite vient avec */
+        u.on = true;
+        u.anc.forEach(function(a){ a._pg = (a._pg || 0) + 1; });                                     /* un cadre se montre tant qu'une de ses unités est affichée */
+      });
+      var L = PG.L[l.id] = { el: l, base: units, units: units, pages: null, key: '' };
+      units.forEach(function(u, n){ vis(L, n, false); });
+    });
+    /* Barre de progression sous les parties, boutons de page au-dessus des onglets */
+    var pgHead = document.createElement('div'), pgNav = document.createElement('div');
+    pgHead.className = 'pghead ui';
+    toc.parentNode.insertBefore(pgHead, toc); pgHead.appendChild(toc);
+    pgHead.insertAdjacentHTML('beforeend', '<div class="pgbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div>');
+    pgNav.className = 'pgnav ui';
+    pgNav.innerHTML = '<div class="pgnav-in"><button class="btn pg-prev" type="button">' + ICON_PREV + biUI('Précédent', 'Indietro') + '</button><span class="pg-count" aria-live="polite"></span>' +
+      '<button class="btn pri pg-next" type="button"><span class="pg-next-t"></span>' + ICON_NEXT + '</button></div>';
+    vCo.appendChild(pgNav);
+    vCo.classList.add('pg');
+    /* Ce dont dépend le découpage : la langue affichée, la largeur de l'écran et la hauteur disponible pour une page */
+    function pgKey(L){ return store.lang + '|' + window.innerWidth + '|' + Math.round(budget(L.el) / 16); }
+    /* Hauteur disponible pour une page : de la barre de progression jusqu'aux boutons du bas */
+    function budget(l){
+      var top = l.getBoundingClientRect().top + window.pageYOffset;
+      var bas = parseFloat(getComputedStyle(mainEl).paddingBottom) + parseFloat(getComputedStyle(vCo).paddingBottom);      /* place gardée pour les boutons et les onglets */
+      return Math.max(240, window.innerHeight - top - bas);
+    }
+    function visible(u){ return u.els.some(function(e){ return e.getClientRects().length > 0; }); }
+    /* Les cadres (encadré, liste, tableau, calcul) qui s'ouvrent à l'unité n, du plus grand au plus petit, et la dernière unité d'un cadre */
+    function ouvre(U, n){ var prec = n > 0 ? U[n - 1].anc : []; return U[n].anc.filter(function(f){ return prec.indexOf(f) < 0; }); }
+    function finDe(U, n, f){ var e = n; while (e + 1 < U.length && U[e + 1].anc.indexOf(f) >= 0) e++; return e; }
+    function montre(L, a, b, on){ for (var n = a; n <= b; n++) vis(L, n, on); }
+    function paginate(L){
+      var H, U, pages = [], a = 0, b, page, real;
+      L.units.forEach(function(u, n){ vis(L, n, false); });
+      /* on repart des unités de base : les séparations faites pour une autre langue ou une autre taille d'écran ne valent plus */
+      U = L.units = L.base.map(function(u){ return { els: u.els, anc: u.anc, id: u.id, brk: u.brk, tete: u.tete, keep: u.keep, on: false }; });
+      H = budget(L.el);
+      while (a < U.length){
+        page = []; real = false; b = a;
+        while (b < U.length){
+          if (real && U[b].brk) break;
+          /* Un encadré, une liste, un tableau ou un calcul qui tient sur une page n'est pas coupé : il passe entier, ici ou à la page suivante */
+          var cadres = ouvre(U, b), fait = 0, e, h;
+          for (var q = 0; q < cadres.length && !fait; q++){
+            e = finDe(U, b, cadres[q]);
+            if (e === b) continue;
+            montre(L, b, e, true);
+            if (L.el.offsetHeight <= H){ for (var n2 = b; n2 <= e; n2++){ page.push(n2); if (!U[n2].keep && visible(U[n2])) real = true; } b = e + 1; fait = 1; break; }
+            montre(L, b, e, false);
+            if (real || (page.length && U[page[0]].tete)){
+              /* tiendrait-il sur une page à lui (sous les titres qui le précèdent, sans le titre de la partie) ? */
+              var garde = real ? [] : page.slice(1);
+              page.forEach(function(n){ vis(L, n, false); }); garde.forEach(function(n){ vis(L, n, true); }); montre(L, b, e, true);
+              h = L.el.offsetHeight;
+              montre(L, b, e, false); garde.forEach(function(n){ vis(L, n, false); }); page.forEach(function(n){ vis(L, n, true); });
+              if (h <= H){
+                if (real) fait = 2;
+                else { page.slice(1).forEach(function(n){ vis(L, n, false); }); b = page[0] + 1; page = [page[0]]; fait = 2; }      /* le titre de la partie, seul sur sa page */
+              }
+            }
+          }
+          if (fait === 2) break;
+          if (fait) continue;
+          vis(L, b, true);
+          if (L.el.offsetHeight > H){
+            if (real){
+              vis(L, b, false);
+              /* pas de dernier élément de liste tout seul sur la page suivante : l'avant-dernier l'accompagne */
+              var f = U[b].anc[U[b].anc.length - 1], der = page[page.length - 1], dans = function(n){ return U[n].anc[U[n].anc.length - 1] === f; };
+              if (f && /^(UL|OL|TBODY)$/.test(f.tagName) && finDe(U, b, f) === b && page.length > 2 && dans(der) && dans(page[page.length - 2]) && !U[der].keep){ vis(L, page.pop(), false); b--; }
+              break;
+            }
+            if (page.length && U[page[0]].tete){      /* la suite ne tient pas sous le titre de la partie : il ouvre la partie, seul sur sa page */
+              vis(L, b, false); page.slice(1).forEach(function(n){ vis(L, n, false); });
+              b = page[0] + 1; page = [page[0]]; break;
+            }
+            if (U[b].els.length === 2 && U[b].els.every(function(e){ return e.getClientRects().length > 0; })){
+              /* le français et sa traduction ne tiennent pas ensemble sur l'écran : le français d'abord, l'italien sur la page suivante */
+              vis(L, b, false);
+              U.splice(b, 1, { els: [U[b].els[0]], anc: U[b].anc, id: U[b].id, brk: U[b].brk, tete: false, keep: false, on: false },
+                             { els: [U[b].els[1]], anc: U[b].anc, id: U[b].id, brk: false, tete: false, keep: U[b].keep, on: false });
+              continue;
+            }
+          }
+          page.push(b); if (!U[b].keep && visible(U[b])) real = true; b++;
+        }
+        while (page.length > 1 && U[page[page.length - 1]].keep && b < U.length){ vis(L, page.pop(), false); b--; }
+        if (!real && pages.length && !page.some(function(n){ return visible(U[n]); })) pages[pages.length - 1] = pages[pages.length - 1].concat(page);      /* rien à voir dans cette langue : pas de page vide */
+        else pages.push(page);
+        page.forEach(function(n){ vis(L, n, false); });
+        a = b;
+      }
+      L.pages = pages; L.key = pgKey(L); PG.w = window.innerWidth;
+    }
+    function pageOf(L, id){      /* la page où se trouve une unité de base */
+      for (var k = 0; k < L.pages.length; k++) if (L.pages[k].some(function(n){ return L.units[n].id >= id; })) return k;
+      return L.pages.length - 1;
+    }
+    function showPage(L, k){
+      k = Math.max(0, Math.min(L.pages.length - 1, k));
+      L.units.forEach(function(u, n){ vis(L, n, L.pages[k].indexOf(n) >= 0); });
+      PG.cur = L; PG.page = k;
+      st.pu = st.pu || {};
+      var prem = L.units[L.pages[k][0]].id;
+      if (st.pu[L.el.id] !== prem){ st.pu[L.el.id] = prem; save(); }
+      var n = lessons.indexOf(L.el), pct = Math.round((k + 1) / L.pages.length * 100), bar = $('.pgbar', pgHead), fin = n === lessons.length - 1 && k === L.pages.length - 1;
+      $('i', bar).style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct);
+      $('.pg-count', pgNav).textContent = (k + 1) + ' / ' + L.pages.length;
+      $('.pg-prev', pgNav).disabled = n === 0 && k === 0;
+      $('.pg-next-t', pgNav).innerHTML = fin ? biUI('Exercices', 'Esercizi') : biUI('Suivant', 'Avanti');
+      window.scrollTo(0, 0);
+    }
+    /* Affiche une partie. où : rien = là où on s'était arrêté dans cette partie ; 'debut' ; 'fin' ; ou le numéro d'une unité */
+    function showPart(id, ou){
+      if (!PG.L[id]) id = lessons[0].id;
+      var L = PG.L[id];
       lessons.forEach(function(l){ l.hidden = l.id !== id; });
       tocMark(id);
       if (st.part !== id){ st.part = id; save(); }
+      if (vCo.hidden) return;                                   /* les pages se mesurent : il faut que la vue soit affichée */
+      if (!L.pages || L.key !== pgKey(L)) paginate(L);
+      if (ou === 'fin') return showPage(L, L.pages.length - 1);
+      showPage(L, pageOf(L, ou === 'debut' ? 0 : typeof ou === 'number' ? ou : (st.pu && st.pu[id]) || 0));
     }
-    /* Montre un endroit du cours : une partie entière ou un titre à l'intérieur d'une partie */
-    function reveal(el, smooth){
+    function step(d){
+      var L = PG.cur;
+      if (!L || vCo.hidden) return;
+      var k = PG.page + d;
+      if (k >= 0 && k < L.pages.length) return showPage(L, k);
+      var o = lessons[lessons.indexOf(L.el) + (d > 0 ? 1 : -1)];
+      if (o) showPart(o.id, d > 0 ? 'debut' : 'fin');
+      else if (d > 0) location.hash = '#' + c.id + '/exercices';
+    }
+    $('.pg-prev', pgNav).addEventListener('click', function(){ step(-1); });
+    $('.pg-next', pgNav).addEventListener('click', function(){ step(1); });
+    /* Montre un endroit du cours : une partie (là où on s'y était arrêté, ou au début si on y est déjà) ou un titre à l'intérieur */
+    function reveal(el){
       var l = el.classList.contains('lesson') ? el : el.closest('.lesson');
-      if (c.paged && l) showPart(l.id); else if (l) tocMark(l.id);
-      el.scrollIntoView({ behavior: smooth && !c.paged ? 'smooth' : 'auto', block: 'start' });
+      if (!l) return;
+      if (el === l) return showPart(l.id, PG.cur && PG.cur.el === l && !vCo.hidden ? 'debut' : undefined);
+      var U = PG.L[l.id].base, n = 0;
+      for (var k = 0; k < U.length; k++) if (U[k].els.some(function(e){ return e === el || e.contains(el) || el.contains(e); })){ n = k; break; }
+      showPart(l.id, n);
     }
-    if (c.paged){
-      lessons.forEach(function(l, i){
-        var prev = lessons[i - 1], next = lessons[i + 1], nav = document.createElement('div');
-        function b(x, dir){ return '<button class="btn' + (dir > 0 ? ' pri' : '') + '" type="button" data-go="' + x.id + '">' + (dir < 0 ? ICON_PREV : '') + '<span>' + $('.lhead h2', x).innerHTML.replace(/sub-it/g, '') + '</span>' + (dir > 0 ? ICON_NEXT : '') + '</button>'; }
-        nav.className = 'pager ui';
-        nav.innerHTML = (prev ? b(prev, -1) : '<span></span>') + (next ? b(next, 1) : '<a class="btn pri" href="#' + c.id + '/exercices">' + biUI('Passer aux exercices', 'Vai agli esercizi') + ICON_NEXT + '</a>');
-        l.appendChild(nav);
-      });
-      showPart(st.part || lessons[0].id);
+    /* Glisser le doigt vers la gauche ou la droite tourne la page (sauf sur une zone qui défile elle-même de côté) */
+    var glisse = null;
+    function defileDeCote(el){ for (; el && el !== vCo; el = el.parentNode) if (el.scrollWidth > el.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return true; return false; }
+    vCo.addEventListener('touchstart', function(ev){ var p = ev.touches[0]; glisse = ev.touches.length === 1 ? { x: p.clientX, y: p.clientY, t: Date.now(), el: ev.target } : null; }, { passive: true });
+    vCo.addEventListener('touchend', function(ev){
+      if (!glisse) return;
+      var p = ev.changedTouches[0], dx = p.clientX - glisse.x, dy = p.clientY - glisse.y, g = glisse;
+      glisse = null;
+      if (Date.now() - g.t > 700 || Math.abs(dx) < 64 || Math.abs(dx) < 2.2 * Math.abs(dy) || defileDeCote(g.el)) return;
+      step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+    document.addEventListener('keydown', function(ev){
+      if (vCo.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+      if (ev.key === 'ArrowRight') step(1); else if (ev.key === 'ArrowLeft') step(-1);
+    });
+    /* La hauteur des pages dépend de la langue affichée, de la taille de l'écran et des polices : on redécoupe quand elles changent */
+    function redecoupe(){ if (!vCo.hidden && st.part) showPart(st.part); }
+    document.addEventListener('langchange', redecoupe);
+    var pgTimer = null;
+    /* à la rotation de l'écran seulement : sur iPhone, la hauteur change aussi quand la barre de Safari se replie, et la page lue ne doit pas bouger */
+    window.addEventListener('resize', function(){ clearTimeout(pgTimer); pgTimer = setTimeout(function(){ if (PG.cur && PG.w !== window.innerWidth) redecoupe(); }, 180); });
+    if (document.fonts){
+      /* avec une police de remplacement, le texte n'a pas la même hauteur : dès qu'une police arrive, les pages sont à refaire */
+      var police = function(){ lessons.forEach(function(l){ PG.L[l.id].key = ''; }); clearTimeout(pgTimer); pgTimer = setTimeout(redecoupe, 60); };
+      if (document.fonts.ready) document.fonts.ready.then(police);
+      if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', police);
     }
+    showPart(st.part || lessons[0].id);
     /* Bilan à cocher : les coches restent enregistrées */
     $$('input[data-chk]', vCo).forEach(function(x){
       st.checks = st.checks || {};
       x.checked = !!st.checks[x.getAttribute('data-chk')];
       x.addEventListener('change', function(){ st.checks[x.getAttribute('data-chk')] = x.checked ? 1 : 0; save(); if (x.checked) owlEvt('ok'); });
     });
-    function homeProg(){
-      var box = $('.mini', vCo);
-      if (!box) return;
-      var d = EX.filter(isDone).length;
-      box.innerHTML =
-        '<a href="#' + c.id + '/exercices"><b>' + d + '<small>/' + EX.length + '</small></b><span class="fr">exercices</span><span class="it">esercizi</span></a>' +
-        '<a href="#' + c.id + '/entrainement"><b>' + st.tr.best + '</b><span class="fr">meilleure série</span><span class="it">miglior serie</span></a>' +
-        '<a href="#' + c.id + '/controle"><b>' + (st.bestTest == null ? MI : st.bestTest) + '<small>/20</small></b><span class="fr">meilleur contrôle</span><span class="it">miglior verifica</span></a>';
-    }
-
     return {
-      c: c, st: st, EX: EX, paged: !!c.paged,
+      c: c, st: st, EX: EX,
       el: { cours: vCo, exercices: vEx, entrainement: vTr, controle: vTe },
       enter: function(v){
         if (v === 'exercices' && !listed) renderList();
         if (v === 'entrainement' && !trQ && c.mix.length) nextTraining();
         if (v === 'controle' && !testQs && c.tq.length) newTest();
-        if (v === 'cours') homeProg();
+        if (v === 'cours') showPart(st.part || lessons[0].id);
       },
       stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest }; },
       reveal: reveal,
-      spy: function(){
-        if (c.paged || !lessons.length) return;
-        var cur = lessons[0].id, lim = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--abh')) || 56) + 80;
-        lessons.forEach(function(l){ if (l.getBoundingClientRect().top < lim) cur = l.id; });
-        tocMark(cur);
-      },
       /* Ouvre un exercice dans la liste et renvoie sa carte */
       openExo: function(id){
         var e = null;
@@ -8691,8 +8917,8 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       ch = sec && CH[sec.getAttribute('data-ch')];
       if (!ch) return;
       ev.preventDefault();
-      if (cur.ch === ch.c.id && cur.v === 'cours') ch.reveal(el, true);
-      else go('#' + ch.c.id + '/cours', function(){ ch.reveal(el, false); });
+      if (cur.ch === ch.c.id && cur.v === 'cours') ch.reveal(el);
+      else go('#' + ch.c.id + '/cours', function(){ ch.reveal(el); });
     } else if (t.hasAttribute('data-exo')){
       id = t.getAttribute('data-exo');
       EX_ALL.forEach(function(e){ if (e.id === id) ch = CH[e.ch]; });
@@ -8706,13 +8932,11 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       go('#' + ch.c.id + '/exercices', function(){ ch.setFilter(t.getAttribute('data-exg')); window.scrollTo(0, 0); });
     }
   });
-  var spyTick = false;
-  window.addEventListener('scroll', function(){
-    if (spyTick || !cur.ch || cur.v !== 'cours') return;
-    spyTick = true;
-    requestAnimationFrame(function(){ spyTick = false; if (cur.ch && cur.v === 'cours') CH[cur.ch].spy(); });
-  }, { passive: true });
-  function setAbh(){ var a = $('.appbar'); if (a) document.documentElement.style.setProperty('--abh', a.offsetHeight + 'px'); }
+  function setAbh(){
+    var a = $('.appbar'), b = $('.tabbar'), s = document.documentElement.style;
+    if (a) s.setProperty('--abh', a.offsetHeight + 'px');
+    if (b && b.offsetHeight) s.setProperty('--tabh', b.offsetHeight + 'px');      /* les boutons de page se posent juste au-dessus des onglets */
+  }
   window.addEventListener('resize', setAbh);
   window.addEventListener('hashchange', route);
   // Hector, la chouette de SCOLAIR : il accompagne, félicite et encourage.

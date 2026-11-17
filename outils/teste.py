@@ -309,7 +309,7 @@ def qcm_c3(pg, q, fr):
         return ('test', lambda o: ev(o) == v)
     return None
 
-compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0}
+compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0, 'pages': 0}
 
 def rangees(pg, calc):
     """Les rangées d'un calcul posé (bloc .calc) : ('eq', membre de gauche, « = suite ») ou ('expr', expression seule)."""
@@ -334,7 +334,7 @@ def suites(rows):
 # Mise en page d'un calcul posé : les signes « = » les uns sous les autres, rien qui oblige à faire défiler le bloc.
 POSE = r"""(root) => { const out = [];
   root.querySelectorAll('.calc').forEach(c => { if (!c.offsetParent) return;
-    const xs = [...c.querySelectorAll(':scope > .cd')].map(n => Math.round(n.getBoundingClientRect().left * 2) / 2);
+    const xs = [...c.querySelectorAll(':scope > .cd')].filter(n => n.offsetParent).map(n => Math.round(n.getBoundingClientRect().left * 2) / 2);      // les lignes affichées (un calcul peut continuer page suivante)
     const txt = c.textContent.trim().replace(/\s+/g, ' ').slice(0, 50);
     if (new Set(xs).size > 1) out.push('signes = non alignés : ' + txt);
     if (c.scrollWidth > c.clientWidth + 1) out.push('calcul trop large (' + (c.scrollWidth - c.clientWidth) + ' px) : ' + txt);
@@ -344,7 +344,7 @@ POSE = r"""(root) => { const out = [];
       cell.childNodes.forEach(n => { if (n.nodeType === 3) { const r = document.createRange(); r.selectNodeContents(n); b.push(...[...r.getClientRects()].filter(x => x.width > 0)); } else if (n.nodeType === 1) { const r = n.getBoundingClientRect(); if (r.width > 0) b.push(r); } });
       if (b.some((r, i) => i && r.left < b[i - 1].left - 1)) out.push('étape de calcul coupée en deux lignes : ' + cell.textContent.trim().replace(/\s+/g, ' ').slice(0, 60)); });
   });
-  return [root.querySelectorAll('.calc').length, out]; }"""
+  return [[...root.querySelectorAll('.calc')].filter(c => c.offsetParent).length, out]; }"""
 # Les formules du texte : jamais coupées en fin de ligne (hors des tableaux ordinaires, aux colonnes étroites), jamais plus larges
 # que le bloc qui les contient ; aucun tableau ni calcul qu'il faudrait faire défiler.
 FORMULES = r"""(root) => { const out = [];
@@ -363,9 +363,9 @@ FORMULES = r"""(root) => { const out = [];
       if (r.right > rb.right - parseFloat(cs.paddingRight) + 6) out.push('formule plus large que son bloc (' + Math.round(r.right - rb.right + parseFloat(cs.paddingRight)) + ' px) : ' + txt(m)); }
   });
   root.querySelectorAll('.tw, .md').forEach(n => { if (n.offsetParent && n.scrollWidth > n.clientWidth + 1) out.push('bloc à faire défiler (' + (n.scrollWidth - n.clientWidth) + ' px) : ' + txt(n)); });
-  return [root.querySelectorAll('span.m').length, out]; }"""
+  return [[...root.querySelectorAll('span.m')].filter(m => m.offsetParent).length, out]; }"""
 def verifie_pose(pg, sel, ou):
-    el = pg.query_selector(sel)
+    el = pg.query_selector(sel) if isinstance(sel, str) else sel
     n, pb = pg.evaluate(POSE, el)
     compte['calculs'] += n
     nf, pf = pg.evaluate(FORMULES, el)
@@ -460,6 +460,52 @@ def verifie_explications(pg, zone):
             except Exception as ex: pb.append('calcul d’explication illisible : %s (%s)' % (s, ex))
     return pb
 
+# ---------- Le cours en pages ----------
+# Les polices changent la hauteur du texte, donc le découpage en pages : on les charge toutes avant de mesurer.
+POLICES = """(async () => { const F = ['400 1em "Atkinson Hyperlegible"', '700 1em "Atkinson Hyperlegible"', 'italic 400 1em "Atkinson Hyperlegible"', '500 1em Fredoka', '600 1em Fredoka',
+  '700 1em Fredoka', '400 1em "STIX Two Text"', '600 1em "STIX Two Text"', 'italic 400 1em "STIX Two Text"'];
+  await Promise.all(F.map(f => document.fonts.load(f, 'Aé x 2 × − π').catch(() => 0))); await document.fonts.ready; return document.fonts.size; })()"""
+PG_ETAT = r"""(l) => { const v = l.closest('.view'), c = v.querySelector('.pg-count').textContent.split('/').map(Number), de = document.documentElement;
+  return { k: c[0], n: c[1], haut: de.scrollHeight - innerHeight, large: de.scrollWidth - de.clientWidth, cache: l.hidden,
+    texte: l.innerText.trim().length, dessin: [...l.querySelectorAll('svg, input')].some(s => s.getBoundingClientRect().height > 0),
+    barre: parseFloat(v.querySelector('.pgbar i').style.width) || 0, premier: v.querySelector('.pg-prev').disabled, suite: v.querySelector('.pg-next-t').textContent.trim(),
+    partie: (v.querySelector('.toc .chip[aria-pressed="true"]') || { dataset: {} }).dataset.go,
+    depasse: [...l.querySelectorAll('*')].filter(n => { const r = n.getBoundingClientRect(); return r.width && r.right > de.clientWidth + 1; }).map(n => n.tagName + '.' + n.className).slice(0, 3) }; }"""
+PG_SUIVANT = "(l) => l.closest('.view').querySelector('.pg-next').click()"
+PG_PRECEDENT = "(l) => l.closest('.view').querySelector('.pg-prev').click()"
+# Avant de tourner les pages d'une partie : tout ce qui se lit quand rien n'est caché, dans la langue affichée
+PG_REPERE = r"""(l) => { const off = [...l.querySelectorAll('.pg-off')]; off.forEach(e => e.classList.remove('pg-off'));
+  const els = [...l.querySelectorAll('*')]; window.__pgv = els.map(() => 0);
+  window.__pgb = els.map(e => !!e.offsetParent && [...e.childNodes].some(n => n.nodeType === 3 && /\S/.test(n.nodeValue)) && !e.closest('.tag, thead, .go-t'));
+  off.forEach(e => e.classList.add('pg-off')); return window.__pgb.filter(Boolean).length; }"""
+PG_VU = "(l) => { [...l.querySelectorAll('*')].forEach((e, i) => { if (window.__pgb[i] && e.offsetParent) window.__pgv[i]++; }); return 0; }"
+PG_BILAN = r"""(l) => { const out = [];
+  [...l.querySelectorAll('*')].forEach((e, i) => { if (window.__pgb[i] && window.__pgv[i] !== 1) out.push((window.__pgv[i] ? 'affiché sur ' + window.__pgv[i] + ' pages : ' : 'jamais affiché : ') + e.textContent.trim().replace(/\s+/g, ' ').slice(0, 50)); });
+  return out.slice(0, 5); }"""
+def tourne_pages(pg, lesson, ou, forme=None):
+    """Tourne toutes les pages d'une partie du cours, affichée à sa première page. Chaque page : rien à faire défiler, rien qui dépasse,
+    quelque chose à lire, la barre qui avance ; sur l'ensemble : tout le contenu de la partie est affiché une fois et une seule."""
+    pg.evaluate(PG_REPERE, lesson)
+    e = pg.evaluate(PG_ETAT, lesson)
+    total, barre = e['n'], -1
+    chk(e['k'] == 1, '%s : la partie ne s’ouvre pas à sa première page (page %s)' % (ou, e['k']))
+    for k in range(1, total + 1):
+        e = pg.evaluate(PG_ETAT, lesson)
+        w = '%s page %d/%d' % (ou, k, total)
+        chk(not e['cache'], w + ' : partie cachée')
+        chk(e['k'] == k and e['n'] == total, '%s : compteur %s / %s' % (w, e['k'], e['n']))
+        chk(e['large'] <= 0 and not e['depasse'], '%s : débordement horizontal %s %s' % (w, e['large'], e['depasse']))
+        chk(e['haut'] <= 0, '%s : page à faire défiler (%s px)' % (w, e['haut']))
+        chk(e['texte'] > 0 or e['dessin'], w + ' : page vide')
+        chk(e['barre'] > barre, '%s : la barre ne se remplit pas (%s puis %s)' % (w, barre, e['barre'])); barre = e['barre']
+        pg.evaluate(PG_VU, lesson)
+        if forme: forme(lesson, w)
+        compte['pages'] += 1
+        if k < total: pg.evaluate(PG_SUIVANT, lesson)
+    chk(abs(barre - 100) < 0.6, '%s : à la dernière page la barre doit être pleine (%s %%)' % (ou, barre))
+    for x in pg.evaluate(PG_BILAN, lesson): fails.append('%s : %s' % (ou, x))
+    return total
+
 # Par chapitre : recalcul de l'entraînement, recalcul du contrôle, thèmes de l'entraînement
 RECALCUL = {'c10': (tr_c10, qcm_c10, ['cm', 'succ', 'recip', 'init', 'mix']),
             'c3': (tr_c3, qcm_c3, ['calc', 'rac', 'dev', 'fact', 'eq', 'ineq', 'mix'])}
@@ -485,6 +531,7 @@ with sync_playwright() as p:
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' and 'ERR_' not in m.text and 'Failed to load' not in m.text else None)
     pg.goto(URL); pg.wait_for_timeout(300)
     pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(300)
+    pg.evaluate(POLICES); pg.wait_for_timeout(300)
     chaps = pg.evaluate("[...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch)")
     info.append('chapitres : ' + ', '.join(chaps))
     chk(set(chaps) == set(e['ch'] for e in data), 'chapitres affichés %s, chapitres des données %s' % (chaps, sorted(set(e['ch'] for e in data))))
@@ -640,6 +687,51 @@ with sync_playwright() as p:
             chk(vis == ['v-%s-%s' % (v, ch)], '%s onglet %s : vues visibles %s' % (ch, v, vis))
         pg.click('.tab[href="#accueil"]'); pg.wait_for_timeout(60)
         chk(pg.is_visible('#v-accueil') and pg.is_hidden('.tabbar'), ch + " : retour à l'accueil")
+    # 4 bis. Le cours en pages : passage d'une partie à l'autre, reprise là où on s'était arrêté, fin du cours, liens vers le cours
+    for ch in chaps:
+        V = '#v-cours-' + ch
+        pg.goto(URL + '#' + ch + '/cours'); pg.wait_for_timeout(100)
+        parties = pg.evaluate("[...document.querySelectorAll('%s .toc .chip')].map(c => c.dataset.go)" % V)
+        premier, dernier = parties[0], parties[-1]
+        chip = V + ' .toc .chip[data-go="%s"]' % premier
+        pg.click(chip); pg.click(chip)
+        L = pg.query_selector('#' + premier)
+        e = pg.evaluate(PG_ETAT, L)
+        chk(e['k'] == 1 and e['premier'], '%s : à la première page du cours, « Précédent » doit être inactif (%s)' % (ch, e))
+        n1 = e['n']
+        for _ in range(n1): pg.evaluate(PG_SUIVANT, L)                     # une page de plus que la partie : on passe à la suivante
+        if len(parties) > 1:
+            L2 = pg.query_selector('#' + parties[1]); e = pg.evaluate(PG_ETAT, L2)
+            chk(e['partie'] == parties[1] and e['k'] == 1 and not e['cache'], '%s : après la dernière page d’une partie, la suivante doit s’ouvrir à sa page 1 (%s)' % (ch, e))
+            pg.evaluate(PG_PRECEDENT, L2); e = pg.evaluate(PG_ETAT, L)
+            chk(e['partie'] == premier and e['k'] == n1, '%s : « Précédent » à la page 1 doit revenir à la dernière page de la partie d’avant (%s)' % (ch, e))
+        # reprise : on quitte le cours au milieu d'une partie, on y revient à la même page
+        pg.click(chip); pg.click(chip)
+        for _ in range(2): pg.evaluate(PG_SUIVANT, L)
+        avant = pg.evaluate(PG_ETAT, L)
+        pg.click('.tab[data-v="exercices"]'); pg.wait_for_timeout(60); pg.click('.tab[data-v="cours"]'); pg.wait_for_timeout(60)
+        apres = pg.evaluate(PG_ETAT, L)
+        chk((apres['partie'], apres['k']) == (avant['partie'], avant['k']) and avant['k'] == 3, '%s : en revenant au cours on doit retrouver sa page (%s puis %s)' % (ch, (avant['partie'], avant['k']), (apres['partie'], apres['k'])))
+        pg.reload(); pg.wait_for_timeout(400)
+        apres = pg.evaluate(PG_ETAT, pg.query_selector('#' + premier))
+        chk((apres['partie'], apres['k']) == (avant['partie'], avant['k']), '%s : après rechargement on doit retrouver sa page (%s)' % (ch, (apres['partie'], apres['k'])))
+        # fin du cours : le dernier bouton mène aux exercices
+        chipd = V + ' .toc .chip[data-go="%s"]' % dernier
+        pg.click(chipd); pg.click(chipd)
+        Ld = pg.query_selector('#' + dernier); nd = pg.evaluate(PG_ETAT, Ld)['n']
+        for _ in range(nd - 1): pg.evaluate(PG_SUIVANT, Ld)
+        e = pg.evaluate(PG_ETAT, Ld)
+        chk(e['k'] == nd and e['suite'].startswith('Exercices'), '%s : à la dernière page du cours le bouton doit proposer les exercices (%s)' % (ch, e['suite']))
+        pg.evaluate(PG_SUIVANT, Ld); pg.wait_for_timeout(80)
+        chk(pg.is_visible('#v-exercices-' + ch), '%s : le dernier « Suivant » du cours doit ouvrir les exercices' % ch)
+        # un lien vers un endroit du cours ouvre la page où il se trouve
+        cibles = pg.evaluate("[...new Set([...document.querySelectorAll('%s [id]')].filter(e => /^H[34]$/.test(e.tagName)).map(e => e.id))]" % V)
+        for cible in cibles[:6] + cibles[-3:]:
+            pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(40)
+            pg.evaluate("(id) => { const a = document.createElement('a'); a.setAttribute('data-go', id); a.href = '#'; a.textContent = 'x'; document.querySelector('main').appendChild(a); a.click(); a.remove(); }", cible)
+            pg.wait_for_timeout(80)
+            vu = pg.evaluate("(id) => { const e = document.getElementById(id); return !!e.offsetParent && e.getBoundingClientRect().top < innerHeight; }", cible)
+            chk(vu and pg.is_visible(V), '%s : le lien vers « %s » n’ouvre pas la bonne page du cours' % (ch, cible))
     if 'c10' in chaps:
         for v in ['cours', 'exercices', 'entrainement', 'controle']:
             pg.goto(URL + '#' + v); pg.wait_for_timeout(60)
@@ -655,17 +747,14 @@ with sync_playwright() as p:
                 pg.goto(URL + '#' + ch + '/' + v); pg.wait_for_timeout(80)
                 ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
                 chk(ov <= 0, 'débordement %s %s %s : %s' % (l, ch, v, ov))
+            # le cours, page par page
             pg.goto(URL + '#' + ch + '/cours'); pg.wait_for_timeout(80)
-            for go in pg.evaluate("[...document.querySelectorAll('#v-cours-%s .toc .chip')].map(c => c.dataset.go)" % ch):
-                pg.click('#v-cours-%s .toc .chip[data-go="%s"]' % (ch, go)); pg.wait_for_timeout(60)
+            parties = pg.evaluate("[...document.querySelectorAll('#v-cours-%s .toc .chip')].map(c => c.dataset.go)" % ch)
+            for go in parties:
+                chip = '#v-cours-%s .toc .chip[data-go="%s"]' % (ch, go)
+                pg.click(chip); pg.click(chip)                 # un second appui sur la partie affichée ramène à sa première page
                 chk(pg.is_visible('#' + go), '%s : la partie %s ne s’affiche pas' % (ch, go))
-                ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
-                chk(ov <= 0, 'débordement %s %s partie %s : %s' % (l, ch, go, ov))
-                wide = pg.evaluate("""(id) => { const l = document.getElementById(id), W = document.documentElement.clientWidth, out = [];
-                    l.querySelectorAll('*').forEach(n => { const r = n.getBoundingClientRect(); if (r.width && r.right > W + 1) { let p = n.parentElement, sc = false; while (p && p !== l) { const s = getComputedStyle(p); if (/auto|scroll/.test(s.overflowX)) { sc = true; break; } p = p.parentElement; } if (!sc) out.push(n.tagName + '.' + n.className + ' ' + Math.round(r.right)); } });
-                    return out.slice(0, 3); }""", go)
-                chk(not wide, 'élément qui dépasse à droite, %s %s %s : %s' % (l, ch, go, wide))
-                verifie_pose(pg, '#' + go, '%s %s %s' % (l, ch, go))
+                tourne_pages(pg, pg.query_selector('#' + go), '%s %s %s' % (l, ch, go), lambda el, w: verifie_pose(pg, el, w))
             # tous les exercices ouverts, indices et solutions affichés, dans cette langue
             pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(120)
             pg.evaluate("""(ch) => { const v = document.getElementById('v-exercices-' + ch);
@@ -678,6 +767,7 @@ with sync_playwright() as p:
     b.close()
 info.append('lignes de solution relues : %d, calculs d’explication relus : %d' % (compte['lignes'], compte['explications']))
 info.append('mise en forme contrôlée : %d calculs posés, %d formules' % (compte['calculs'], compte['formules']))
+info.append('pages de cours tournées (trois langues) : %d' % compte['pages'])
 print('\n'.join(info))
 print('erreurs JS:', errs)
 print('ÉCHECS:', len(fails))

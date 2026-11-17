@@ -41,8 +41,9 @@ L'écran est étroit et l'élève lit lentement : la forme compte autant que le 
 - Une remarque sur un calcul se place sous l'étape qu'elle explique, en petit.
 - Les tableaux de règles (nom, règle, exemple) deviennent des fiches sur téléphone (`class="tb fx"`).
 - Aucun bloc à faire défiler de gauche à droite.
+- **Le cours se lit page par page, sans faire défiler l'écran.** `moteur.js` découpe chaque partie en pages à la hauteur du téléphone : en haut, une barre se remplit ; en bas, Précédent et Suivant (on peut aussi glisser le doigt). Le découpage est automatique : il suffit d'écrire le cours comme d'habitude, en petits blocs (un encadré par idée, des paragraphes courts, les deux langues l'une après l'autre). Un bloc d'un seul tenant plus haut que l'écran (un très long paragraphe, une grande figure) oblige à faire défiler : le test le signale.
 
-`outils/teste.py` contrôle tout cela dans les trois modes de langue : signes « = » alignés, aucune formule coupée, aucune formule plus large que son bloc, aucun tableau ni calcul qui défile.
+`outils/teste.py` contrôle tout cela dans les trois modes de langue : signes « = » alignés, aucune formule coupée, aucune formule plus large que son bloc, aucun tableau ni calcul qui défile. Il tourne aussi toutes les pages du cours : aucune page à faire défiler, aucune page vide, tout le contenu affiché une fois et une seule, la reprise à la bonne page.
 
 ## Première mise en ligne (une seule fois)
 
@@ -68,7 +69,7 @@ Je dicte le chapitre vu en cours et j'envoie les photos du livre (cours et exerc
 ### Ajouter un chapitre
 
 1. Créer `src/chNN/` avec : le cours (`cours1.html`...), les exercices (`exA.js`...) et `chapitre.js`. Prendre `src/ch10/` comme modèle pour un chapitre avec des réponses à taper, `src/ch03/` pour un chapitre de calcul littéral (formules en HTML, cours en plusieurs pages, exercices à faire sur le cahier).
-2. La vue du cours s'appelle `<section id="v-cours-cNN" class="view" data-ch="cNN" hidden>`. Les identifiants d'exercices commencent par `cNN` (sauf ceux du chapitre 10, déjà publiés).
+2. La vue du cours s'appelle `<section id="v-cours-cNN" class="view" data-ch="cNN" hidden>` ; elle contient la liste des parties (`<div class="toc">`, un bouton `data-go` par partie) puis une `<article class="lesson" id="...">` par partie. Le découpage en pages se fait tout seul. Les identifiants d'exercices commencent par `cNN` (sauf ceux du chapitre 10, déjà publiés).
 3. Déclarer le chapitre dans `outils/assemble.py` (liste `CHAPITRES`, dans l'ordre de l'écran d'accueil : le nouveau à la fin) et ses groupes d'exercices dans `outils/validate.js`.
 4. Ajouter dans `outils/teste.py` le recalcul des questions d'entraînement et de contrôle du chapitre (dictionnaire `RECALCUL`).
 

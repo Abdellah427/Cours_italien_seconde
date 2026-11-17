@@ -758,7 +758,7 @@
   ];
 
   CHAPS.push({
-    id: 'c3', num: 3, paged: true, sym: '<span class="m"><i>x</i></span>',
+    id: 'c3', num: 3, sym: '<span class="m"><i>x</i></span>',
     title: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     short: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     sub: { fr: 'Fractions, puissances, racines, développer, factoriser, équations, inéquations', it: 'Frazioni, potenze, radici, sviluppare, scomporre, equazioni, disequazioni' },
