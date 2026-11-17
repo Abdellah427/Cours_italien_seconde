@@ -1,14 +1,19 @@
-# Exercices du livre : format des données
+# Exercices : format des données
 
 ## Contexte
 Application de révision pour téléphone (une seule page HTML) destinée à une élève de Seconde en France.
 Elle est italophone, a de grosses difficultés en maths et surtout un gros problème de langue : elle comprend
 mal les énoncés en français. Chapitre 10 « Information chiffrée » (manuel Bordas) : évolutions successives
-(taux global) et évolutions réciproques (taux réciproque). Chaque exercice du livre est repris tel quel en
-français, avec une traduction italienne complète, un indice et une solution commentée dans les deux langues.
+(taux global) et évolutions réciproques (taux réciproque). Chaque exercice est repris du livre en français
+(nombres et sens fidèles), avec une traduction italienne complète, un indice et une solution commentée dans les
+deux langues.
 
-Pages du livre utilisées : p. 302 et 303 (cours, Capacités 4 et 5, solutions commentées), p. 311 à 313
-(exercices 115 à 140), p. 314 à 316 (l’essentiel, exercices 141 à 158).
+L'élève travaille sans le manuel : à l'écran, rien ne renvoie au livre (pas de page, pas de numéro d'exercice
+du livre, pas de « du manuel »). L'application numérote les exercices elle-même, dans l'ordre de la liste. Les
+champs `num` et `page` gardent seulement la trace de l'origine de l'exercice ; ils ne sont pas affichés.
+
+Origine du chapitre 10 : p. 302 et 303 (cours, solutions commentées), p. 311 à 313 (exercices 115 à 140),
+p. 314 à 316 (l’essentiel, exercices 141 à 158).
 
 ## Fichier à produire
 Un fichier JavaScript qui ne contient QUE des appels `EXOS.push({...});` (un par exercice, dans l'ordre
@@ -22,9 +27,9 @@ Ce qui suit décrit le format du chapitre 10. Les compléments pour les chapitre
 EXOS.push({
   id: 'ex116',              // unique : 'ex' + numéro, ou 'cap4', 'cap5'
   group: 'succ',            // 'rappels' | 'succ' | 'recip' | 'synth'
-  num: '116', page: 311,    // numéro tel qu'affiché (texte) et page du livre (nombre). Capacités : num: 'Capacité 4'
+  num: '116', page: 311,    // origine : numéro (texte) et page du livre (nombre). Jamais affichés. Capacités : num: 'Capacité 4'
   stars: 2,                 // 1 = application directe, 2 = deux étapes, 3 = raisonnement / plusieurs étapes
-  tag: { fr: 'VRAI / FAUX', it: 'VERO / FALSO' },   // optionnel : étiquette du livre (VRAI / FAUX, LOGIQUE, MATHS & SVT, QCM, CALCULATRICE, PYTHON...)
+  tag: { fr: 'VRAI / FAUX', it: 'VERO / FALSO' },   // optionnel : étiquette affichée (VRAI / FAUX, LOGIQUE, MATHS & SVT, QCM, CALCULATRICE, PYTHON...)
   title: { fr: 'Population d’une ville', it: 'La popolazione di una città' },  // titre court (2 à 5 mots)
   text: { fr: '<p>...</p>', it: '<p>...</p>' },     // énoncé commun (HTML simple), sans les questions numérotées
   figure: { ... },          // optionnel, voir « Schémas » plus bas
@@ -37,7 +42,7 @@ Champs communs :
 - `q: { fr, it }` : texte de la question (sans le numéro, il est ajouté automatiquement). HTML simple autorisé.
 - `kind: 'num'` (réponse numérique tapée) ou `kind: 'choice'` (boutons).
 - `hint: { fr, it }` : UN indice court qui met sur la voie sans donner le résultat.
-- `sol: { fr, it }` : solution commentée, étape par étape, comme les « Solution commentée » du livre.
+- `sol: { fr, it }` : solution commentée, étape par étape. Ne pas écrire « comme dans le livre » ni citer une page.
   Phrases courtes. Utiliser `<ol><li>...</li></ol>` pour les étapes et `<p>` pour la conclusion.
   Le résultat final en gras `<b>...</b>`. La solution doit aussi être juste avec les arrondis demandés.
 
@@ -75,7 +80,7 @@ Pour un schéma par question (a. et b.), mettre `figure` dans la question elle-m
 - Code Python : `<pre class="code">def mystere(t, u):\n    c = (1 + t) * (1 + u)\n...</pre>` (garder les `\n`).
 
 ## Règles d'écriture (importantes)
-- Français : reprendre l'énoncé du livre mot pour mot (corriger seulement une faute évidente).
+- Français : reprendre l'énoncé du livre mot pour mot (corriger seulement une faute évidente), sans citer le livre.
   Virgule décimale (1,32), « × » pour multiplier, « ÷ » pour diviser, « − » (signe moins U+2212) pour les
   nombres négatifs et les soustractions dans le texte. Espaces normaux : la page ajoute elle-même les espaces
   insécables françaises (avant %, €, :, ?, !).
@@ -104,7 +109,7 @@ Modèle : `src/ch03/exA.js`. Ce qui change par rapport au chapitre 10 :
 EXOS.push({
   ch: 'c3', id: 'c3e14',     // ch : le chapitre ; l'id commence par le chapitre ('c3e' + numéro, 'c3a1' pour une activité)
   group: 'calc',             // un des groupes déclarés dans src/ch03/chapitre.js et dans outils/validate.js
-  num: '14', page: 85,       // sans page : src: { fr: 'cahier, activité 1', it: 'quaderno, attività 1' }
+  num: '14', page: 85,       // origine, jamais affichée. Sans page : src: { fr: 'cahier, activité 1', it: 'quaderno, attività 1' }
   title: { fr: '...', it: '...' },
   text: '<p class="fr">...</p>\n<p class="it">...</p>\n<p class="items">...</p>',
   parts: [ { kind: 'self', hint: '...', sol: '...' } ]
@@ -116,12 +121,31 @@ EXOS.push({
   `{ fr, it }` : les phrases françaises portent `class="fr"`, leur traduction `class="it"` (autant de l'un que de l'autre), et
   les calculs, écrits une seule fois, ne portent ni l'un ni l'autre. Dans une phrase : `<span class="fr">donc</span><span class="it inl">quindi</span>`.
   Dans ces chaînes, les espaces insécables françaises s'écrivent `\u00a0` (avant `: ; ? ! % € »`, après `«`, entre les groupes de trois chiffres).
-- **Formules.** `<span class="m">` autour d'une formule, `<span class="mc">` pour chaque morceau qui ne doit pas être coupé
-  (un morceau par égalité : `<span class="mc">A</span> <span class="mc">= 48 − 16</span> <span class="mc">= 32</span>`),
-  `class="m nw"` pour une formule courte d'un seul bloc. Lettres en `<i>x</i>`, puissances en `<sup>2</sup>`,
-  fraction `<span class="frac"><span>3</span><span>4</span></span>`, racine `<span class="sqrt"><span class="rad">18</span></span>`.
-  Calcul pas à pas : `<div class="calc"><p>...</p><p>...</p></div>`, avec la raison en `<span class="why">`.
+- **Formules.** Une formule dans une phrase : `<span class="m nw">...</span>`, d'un seul bloc (elle n'est jamais coupée en fin
+  de ligne). Lettres en `<i>x</i>`, puissances en `<sup>2</sup>`, fraction `<span class="frac"><span>3</span><span>4</span></span>`,
+  racine `<span class="sqrt"><span class="rad">18</span></span>` (`class="sqrt gr"` si elle contient une fraction).
+  Une expression vraiment longue, sans signe = : `<span class="m">` avec un `<span class="mc">` par morceau insécable.
   Plusieurs expressions à la suite (A = ..., B = ...) : `<p class="items"><span class="item">...</span> <span class="item">...</span></p>`.
+- **Calcul posé.** Dès qu'un calcul a deux étapes, ou qu'une formule est trop longue pour rester dans la phrase, on le pose :
+  une étape par ligne, les signes = alignés. C'est une grille de trois colonnes, chaque ligne s'écrit avec trois cases :
+
+  ```
+  <div class="calc">
+  <span class="cl">a.</span><span class="cg m"><i>A</i></span><span class="cd m">= 48 − 16</span>
+  <span class="cl"></span><span class="cg m"></span><span class="cd m">= 32</span>
+  <span class="cn"><span class="fr">la multiplication d’abord</span><span class="it inl">prima la moltiplicazione</span></span>
+  </div>
+  ```
+
+  `.cl` : le libellé (a., 1., ou vide) ; `.cg` : le membre de gauche, aligné à droite (vide sur les lignes suivantes) ;
+  `.cd` : « = suite ». Si le membre de gauche est long (plus de 12 caractères environ), il passe seul sur la première ligne :
+  `<span class="cl"></span><span class="ce m">(x + 9)(x − 8)</span>`, puis les lignes « = ... ».
+  Équations équivalentes : une équation par ligne, `<span class="cl eqv">⇔</span>` au début des lignes suivantes.
+  `.cn` : une remarque en petit, sous l'étape qu'elle explique. `.ct` : une ligne de texte sur toute la largeur
+  (`<p class="ct">`). `<span class="cl seul">1.</span>` : un numéro de question seul sur sa ligne, au-dessus d'un long calcul.
+  Dans une phrase, le même bloc s'écrit `<span class="calc">...</span>` : il prend ses propres lignes.
+- **Questions numérotées.** Dans un énoncé, chaque question commence une ligne : `<br><b>2.</b> ...` (rien avant la première).
+- Les tableaux de règles (nom, règle, exemple) portent `class="tb fx"` : sur téléphone, une fiche par ligne du tableau.
 
 ### Types de questions en plus de `num`
 

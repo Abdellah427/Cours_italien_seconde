@@ -5,7 +5,7 @@
   function M(h){ return '<span class="m nw">' + h + '</span>'; }
   function MC(a){ return '<span class="m">' + a.map(function(x){ return '<span class="mc">' + x + '</span>'; }).join(' ') + '</span>'; }
   function frac(a, b){ return '<span class="frac"><span>' + a + '</span><span>' + b + '</span></span>'; }
-  function rac(a){ return '<span class="sqrt"><span class="rad">' + a + '</span></span>'; }
+  function rac(a){ return '<span class="sqrt' + (String(a).indexOf('class="frac"') >= 0 ? ' gr' : '') + '"><span class="rad">' + a + '</span></span>'; }   // gr : grand radical au-dessus d'une fraction
   function racBox(a){ return '<span class="sqrt bxr"><span class="rad">' + a + '</span></span>'; }   // racine dont le contenu est une case à remplir
   function pw(a, n){ return a + '<sup>' + n + '</sup>'; }
   function z(n){ return n < 0 ? MI + num(-n, 6) : num(n, 6); }               // nombre relatif, avec le vrai signe moins
@@ -22,7 +22,33 @@
   function nz(a, b){ var v; do { v = rnd(a, b); } while (!v); return v; }
   function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b){ var t = a % b; a = b; b = t; } return a; }
   function Q(fr, it, math){ return bi({ fr: fr, it: it }, 'p') + (math ? '<p class="mq">' + math + '</p>' : ''); }
-  function calc(lines, fr, it){ return '<div class="calc">' + lines.map(function(l){ return '<p>' + l + '</p>'; }).join('') + '</div>' + (fr ? bi({ fr: fr, it: it }, 'p') : ''); }
+  /* Calcul posé : une étape par ligne, les signes « = » alignés (bloc .calc de maths.css).
+     pose(['expression', '= étape', '= résultat']) pour une suite d'égalités ; pose(['a = b', '⇔ c = d', ...]) pour des équations équivalentes
+     (une équation par ligne, le signe ⇔ au début de chaque nouvelle ligne). */
+  function cl(eqv){ return eqv ? '<span class="cl eqv">⇔</span>' : '<span class="cl"></span>'; }
+  function rg(l, r, eqv){ return cl(eqv) + '<span class="cg m">' + l + '</span><span class="cd m">' + r + '</span>'; }
+  function rge(x, eqv){ return cl(eqv) + '<span class="ce m">' + x + '</span>'; }
+  function coupe(eq){ var i = eq.indexOf(' = '); return i < 0 || eq.indexOf(' = ', i + 1) >= 0 ? null : [eq.slice(0, i), '= ' + eq.slice(i + 3)]; }
+  function pose(st){
+    if (st.some(function(s){ return s.indexOf('⇔') === 0; })){
+      return st.map(function(s){ var eqv = s.indexOf('⇔') === 0; s = s.replace(/^⇔ /, ''); var c = coupe(s); return c ? rg(c[0], c[1], eqv) : rge(s, eqv); }).join('');
+    }
+    /* L'expression de départ reste sur la ligne de la première égalité si elle est courte et si l'ensemble tient dans la largeur
+       d'un téléphone ; sinon elle passe seule sur sa ligne, et les lignes « = ... » prennent toute la largeur. */
+    var lg = function(s){ return s.replace(/<sup>[^<]*<\/sup>/g, '.').replace(/<[^>]+>/g, '').length; };
+    var e = st[0], suite = st.slice(1), large = Math.max.apply(null, suite.map(lg));
+    if (lg(e) <= 12 && lg(e) + large <= 30) return suite.map(function(s, i){ return rg(i ? '' : e, s); }).join('');
+    return rge(e) + suite.map(function(s){ return rge(s); }).join('');
+  }
+  function calc(rows, fr, it){ return '<div class="calc">' + rows + '</div>' + (fr ? bi({ fr: fr, it: it }, 'p') : ''); }
+  /* Indice avec des formules : une phrase, une formule par ligne (signes « = » alignés), puis une seconde phrase éventuelle. */
+  var LA = '<i>a</i>', LB = '<i>b</i>', LN = '<i>n</i>', LP = '<i>p</i>';
+  function regles(fr, it, eqs, fr2, it2){
+    return bi({ fr: fr, it: it }, 'p') + '<div class="calc">' + eqs.map(function(q){ var c = coupe(q); return c ? rg(c[0], c[1]) : rge(q); }).join('') + '</div>' + (fr2 ? bi({ fr: fr2, it: it2 }, 'p') : '');
+  }
+  var ID1 = '(' + LA + ' + ' + LB + ')' + SQ + ' = ' + LA + SQ + ' + 2' + LA + LB + ' + ' + LB + SQ,
+      ID2 = '(' + LA + ' − ' + LB + ')' + SQ + ' = ' + LA + SQ + ' − 2' + LA + LB + ' + ' + LB + SQ,
+      ID3 = '(' + LA + ' − ' + LB + ')(' + LA + ' + ' + LB + ') = ' + LA + SQ + ' − ' + LB + SQ;
   function why(fr, it){ return ' <span class="why"><span class="fr">' + typo(fr, true) + '</span><span class="it inl">' + it + '</span></span>'; }
   var OU = ' <span class="ui"><span class="fr">ou</span><span class="it">o</span></span> ';
   var PLAIN = { fr: 'Presque : le nombre est bon, mais vérifie le signe.', it: 'Quasi: il numero è giusto, ma controlla il segno.' };
@@ -86,7 +112,7 @@
       text: Q('Calcule en respectant les priorités.', 'Calcola rispettando l’ordine delle operazioni.', M(e)),
       part: numPart(ans, traps,
         { fr: 'Ordre des calculs : les parenthèses, puis les puissances, puis × et ÷, enfin + et −.', it: 'Ordine dei calcoli: le parentesi, poi le potenze, poi × e ÷, infine + e −.' },
-        calc([MC(st)])) };
+        calc(pose(st))) };
   }
   function gSubst(){
     var k = rnd(0, 3), xv = pick([-5, -4, -3, -2, -1, 2, 3, 4, 5, 6]), a, b, e, ans, traps = [], st;
@@ -118,12 +144,15 @@
       part: numPart(ans, traps,
         xv < 0 ? { fr: 'Remplace x par ' + SUB + ', entre parenthèses, et remets le signe × là où il était caché.', it: 'Sostituisci x con ' + SUB + ', tra parentesi, e rimetti il segno × dove era nascosto.' }
           : { fr: 'Remplace x par ' + xv + ' et remets le signe × là où il était caché.', it: 'Sostituisci x con ' + xv + ' e rimetti il segno × dove era nascosto.' },
-        calc([MC(st)])) };
+        calc(pose(st))) };
   }
   function gPuiss(){
     var k = rnd(0, 4), a, m, n, p, e, ans, traps = [], sol, hint;
     var TXT = Q('Écris sous la forme d’une seule puissance.', 'Scrivi come un’unica potenza.');
-    var H = { fr: 'Les trois règles : a<sup>m</sup> × a<sup>n</sup> = a<sup>m + n</sup>, a<sup>m</sup> ÷ a<sup>n</sup> = a<sup>m − n</sup>, (a<sup>m</sup>)<sup>n</sup> = a<sup>m × n</sup>.', it: 'Le tre regole: a<sup>m</sup> × a<sup>n</sup> = a<sup>m + n</sup>, a<sup>m</sup> ÷ a<sup>n</sup> = a<sup>m − n</sup>, (a<sup>m</sup>)<sup>n</sup> = a<sup>m × n</sup>.' };
+    var H = regles('Les règles de calcul sur les puissances :', 'Le regole di calcolo sulle potenze:', [
+      pw(LA, LN) + ' × ' + pw(LA, LP) + ' = ' + pw(LA, LN + ' + ' + LP),
+      frac(pw(LA, LN), pw(LA, LP)) + ' = ' + pw(LA, LN + ' − ' + LP),
+      pw('(' + pw(LA, LN) + ')', LP) + ' = ' + pw(LA, LN + ' × ' + LP)]);
     if (k === 3){
       /* Calculer une puissance d'un nombre négatif */
       a = rnd(2, 5); var c = rnd(0, 4), SOLV;
@@ -147,31 +176,31 @@
         SOLV = [e, '= 1'];
       }
       return { type: { fr: 'Puissances', it: 'Potenze' }, text: Q('Calcule.', 'Calcola.', M(e)),
-        part: numPart(ans, traps, { fr: 'Écris la puissance comme un produit de facteurs égaux, puis compte les signes moins.', it: 'Scrivi la potenza come un prodotto di fattori uguali, poi conta i segni meno.' }, calc([MC(SOLV)])) };
+        part: numPart(ans, traps, { fr: 'Écris la puissance comme un produit de facteurs égaux, puis compte les signes moins.', it: 'Scrivi la potenza come un prodotto di fattori uguali, poi conta i segni meno.' }, calc(pose(SOLV))) };
     }
     a = pick([2, 3, 5, 7, 10]);
     if (k === 0){
       do { m = nz(-6, 9); n = nz(-6, 9); } while (m + n === 0 || m + n === 1 || m === n || m === 1 || n === 1);
       e = pw(a, z(m)) + ' × ' + pw(a, z(n)); ans = m + n;
       traps.push(trap([m * n], 'Pour un produit de puissances d’un même nombre, on additionne les exposants (on ne les multiplie pas).', 'Per un prodotto di potenze dello stesso numero si sommano gli esponenti (non si moltiplicano).'));
-      sol = calc([MC([e, '= ' + pw(a, z(m) + ' + ' + zp(n)), '= ' + pw(a, z(ans))])]);
+      sol = calc(pose([e, '= ' + pw(a, z(m) + ' + ' + zp(n)), '= ' + pw(a, z(ans))]));
     } else if (k === 1){
       do { m = nz(-6, 9); n = nz(-6, 9); } while (m === n || m - n === 1 || m === 1 || n === 1);
       e = frac(pw(a, z(m)), pw(a, z(n))); ans = m - n;
       traps.push(trap([m + n], 'Pour un quotient, on soustrait les exposants : celui du haut moins celui du bas.', 'Per un quoziente si sottraggono gli esponenti: quello sopra meno quello sotto.'));
       traps.push(trap([n - m], 'L’ordre compte : exposant du haut moins exposant du bas.', 'L’ordine conta: esponente sopra meno esponente sotto.'));
-      sol = calc([MC([e, '= ' + pw(a, z(m) + ' − ' + zp(n)), '= ' + pw(a, z(ans))])]);
+      sol = calc(pose([e, '= ' + pw(a, z(m) + ' − ' + zp(n)), '= ' + pw(a, z(ans))]));
     } else if (k === 2){
       do { m = nz(-4, 6); n = nz(-4, 6); } while (m + n === m * n || m * n === 1 || m === 1 || n === 1);
       e = pw('(' + pw(a, z(m)) + ')', z(n)); ans = m * n;
       traps.push(trap([m + n], 'Pour une puissance de puissance, on multiplie les exposants (on ne les additionne pas).', 'Per una potenza di potenza si moltiplicano gli esponenti (non si sommano).'));
-      sol = calc([MC([e, '= ' + pw(a, z(m) + ' × ' + zp(n)), '= ' + pw(a, z(ans))])]);
+      sol = calc(pose([e, '= ' + pw(a, z(m) + ' × ' + zp(n)), '= ' + pw(a, z(ans))]));
     } else {
       a = 10;
       do { m = nz(-8, 8); n = nz(-8, 8); p = nz(-8, 8); } while (m + n - p === 0 || m + n - p === 1 || m === 1 || n === 1 || p === 1 || m + n === 0 || m + n === 1);
       e = frac(pw(10, z(m)) + ' × ' + pw(10, z(n)), pw(10, z(p))); ans = m + n - p;
       traps.push(trap([m + n + p], 'On additionne les exposants du produit, puis on soustrait celui du dénominateur.', 'Si sommano gli esponenti del prodotto, poi si sottrae quello del denominatore.'));
-      sol = calc([MC([e, '= ' + frac(pw(10, z(m + n)), pw(10, z(p))), '= ' + pw(10, z(m + n) + ' − ' + zp(p)), '= ' + pw(10, z(ans))])]);
+      sol = calc(pose([e, '= ' + frac(pw(10, z(m + n)), pw(10, z(p))), '= ' + pw(10, z(m + n) + ' − ' + zp(p)), '= ' + pw(10, z(ans))]));
     }
     return { type: { fr: 'Puissances', it: 'Potenze' }, text: TXT + '<p class="mq">' + M(e) + '</p>',
       part: fillPart('= ' + a + '<sup class="bxs">{±0}</sup>', [ans], traps, H, sol) };
@@ -198,19 +227,19 @@
       if (b !== d) st.push('= ' + frac(a2, l) + ' ' + op + ' ' + frac(c2, l));
       st.push('= ' + (s < 0 ? MI : '') + frac(Math.abs(s), l));
       if (Math.abs(s) !== Math.abs(n) || l !== dn) st.push('= ' + R);
-      sol = calc([MC(st)]);
+      sol = calc(pose(st));
     } else if (op === '×'){
       traps.push(trap([a * d, b * c], 'Pour multiplier : numérateurs entre eux, dénominateurs entre eux. On ne retourne aucune fraction.', 'Per moltiplicare: numeratori tra loro, denominatori tra loro. Non si capovolge nessuna frazione.'));
       hint = { fr: 'Multiplie les numérateurs entre eux et les dénominateurs entre eux. Simplifie avant de calculer si tu peux.', it: 'Moltiplica i numeratori tra loro e i denominatori tra loro. Se puoi, semplifica prima di calcolare.' };
       var st2 = [e, '= ' + frac(a + ' × ' + c, b + ' × ' + d), '= ' + frac(a * c, b * d)];
       if (a * c !== n) st2.push('= ' + R);
-      sol = calc([MC(st2)]);
+      sol = calc(pose(st2));
     } else {
       traps.push(trap([a * c / gcd(a * c, b * d), b * d / gcd(a * c, b * d)], 'Diviser par une fraction, c’est multiplier par son inverse : il faut retourner la deuxième fraction.', 'Dividere per una frazione vuol dire moltiplicare per la sua inversa: bisogna capovolgere la seconda frazione.'));
       hint = { fr: 'Diviser par ' + F2 + ', c’est multiplier par son inverse ' + frac(d, c) + '.', it: 'Dividere per ' + F2 + ' vuol dire moltiplicare per la sua inversa ' + frac(d, c) + '.' };
       var st3 = [e, '= ' + F1 + ' × ' + frac(d, c), '= ' + frac(a * d, b * c)];
       if (a * d !== n) st3.push('= ' + R);
-      sol = calc([MC(st3)]);
+      sol = calc(pose(st3));
     }
     return { type: { fr: 'Fractions', it: 'Frazioni' },
       text: Q('Calcule et donne le résultat sous forme de fraction irréductible.', 'Calcola e dai il risultato come frazione ridotta ai minimi termini.', M(e)),
@@ -235,7 +264,7 @@
       text: Q('Donne l’écriture scientifique de ce nombre.', 'Scrivi questo numero in notazione scientifica.', M(N)),
       part: fillPart('= {0} × 10<sup class="bxs">{±1}</sup>', [mant, e], [],
         { fr: 'Déplace la virgule pour obtenir un nombre entre 1 et 10, puis compte de combien de rangs tu l’as déplacée. Vers la gauche : exposant positif. Vers la droite : exposant négatif.', it: 'Sposta la virgola per ottenere un numero tra 1 e 10, poi conta di quanti posti l’hai spostata. Verso sinistra: esponente positivo. Verso destra: esponente negativo.' },
-        calc([MC([N, '= ' + MANT + ' × ' + pw(10, z(e))])],
+        calc(pose([N, '= ' + MANT + ' × ' + pw(10, z(e))]),
           'Le premier facteur, ' + MANT + ', est entre 1 et 10. La virgule s’est déplacée de ' + Math.abs(e) + ' rang' + (Math.abs(e) > 1 ? 's' : '') + ' vers la ' + (e > 0 ? 'gauche' : 'droite') + '.',
           'Il primo fattore, ' + MANT + ', è tra 1 e 10. La virgola si è spostata di ' + Math.abs(e) + ' post' + (Math.abs(e) > 1 ? 'i' : 'o') + ' verso ' + (e > 0 ? 'sinistra' : 'destra') + '.'),
         { check: function(v){
@@ -259,7 +288,7 @@
         text: Q('Écris sous la forme a√b, avec b le plus petit possible.', 'Scrivi nella forma a√b, con b il più piccolo possibile.', M(rac(n))),
         part: fillPart('= {0}' + racBox('{1}'), [a, m], traps,
           { fr: 'Cherche le plus grand carré (4, 9, 16, 25, 36, 49, 100...) qui divise ' + n + '.', it: 'Cerca il più grande quadrato (4, 9, 16, 25, 36, 49, 100...) che divide ' + n + '.' },
-          calc([MC([rac(n), '= ' + rac(a * a + ' × ' + m), '= ' + rac(a * a) + ' × ' + rac(m), '= ' + a + rac(m)])]),
+          calc(pose([rac(n), '= ' + rac(a * a + ' × ' + m), '= ' + rac(a * a) + ' × ' + rac(m), '= ' + a + rac(m)])),
           { check: function(v){
               if (v[0] > 0 && v[1] > 0 && Math.abs(v[0] * v[0] * v[1] - n) < 1e-9 && v[1] !== m) return { r: 'mid', msg: { fr: 'Presque : c’est bien égal, mais on peut encore simplifier. Le nombre sous la racine contient encore un carré.', it: 'Quasi: è uguale, ma si può semplificare ancora. Il numero sotto la radice contiene ancora un quadrato.' } };
               return null;
@@ -272,7 +301,7 @@
       return { type: T, text: Q('Réduis cette somme.', 'Riduci questa somma.', M(e)),
         part: fillPart('= {±0}' + rac(m), [a + b], [],
           { fr: 'On compte les ' + rac(m) + ' comme on compte des x : ' + z(a) + ' ' + pm(b) + '.', it: 'Le ' + rac(m) + ' si contano come le x: ' + z(a) + ' ' + pm(b) + '.' },
-          calc([MC([e, '= (' + z(a) + ' ' + pm(b) + ')' + rac(m), '= ' + mono(a + b, rac(m)).replace(/^/, a + b < 0 ? MI : '')])])) };
+          calc(pose([e, '= (' + z(a) + ' ' + pm(b) + ')' + rac(m), '= ' + mono(a + b, rac(m)).replace(/^/, a + b < 0 ? MI : '')]))) };
     }
     if (k === 3){
       /* produit ou quotient de deux racines : le résultat est un entier */
@@ -282,14 +311,14 @@
         traps.push(trap(a * b, 'N’oublie pas la racine : ' + rac(a) + ' × ' + rac(b) + ' = ' + rac(a * b) + ', et ' + rac(a * b) + ' = ' + n + '.', 'Non dimenticare la radice: ' + rac(a) + ' × ' + rac(b) + ' = ' + rac(a * b) + ', e ' + rac(a * b) + ' = ' + n + '.'));
         return { type: T, text: Q('Calcule. Le résultat est un entier.', 'Calcola. Il risultato è un numero intero.', M(rac(a) + ' × ' + rac(b))),
           part: numPart(n, traps, { fr: 'Le produit de deux racines est la racine du produit.', it: 'Il prodotto di due radici è la radice del prodotto.' },
-            calc([MC([rac(a) + ' × ' + rac(b), '= ' + rac(a + ' × ' + b), '= ' + rac(a * b), '= ' + n])])) };
+            calc(pose([rac(a) + ' × ' + rac(b), '= ' + rac(a + ' × ' + b), '= ' + rac(a * b), '= ' + n]))) };
       }
       var qt = pick([[18, 2], [50, 2], [12, 3], [75, 3], [20, 5], [48, 3], [32, 2], [45, 5], [96, 6], [28, 7], [72, 2], [98, 2]]);
       a = qt[0]; b = qt[1]; n = Math.round(Math.sqrt(a / b));
       traps.push(trap(a / b, 'N’oublie pas la racine : le quotient des racines est ' + rac(a / b) + ', et ' + rac(a / b) + ' = ' + n + '.', 'Non dimenticare la radice: il quoziente delle radici è ' + rac(a / b) + ', e ' + rac(a / b) + ' = ' + n + '.'));
       return { type: T, text: Q('Calcule. Le résultat est un entier.', 'Calcola. Il risultato è un numero intero.', M(frac(rac(a), rac(b)))),
         part: numPart(n, traps, { fr: 'Le quotient de deux racines est la racine du quotient.', it: 'Il quoziente di due radici è la radice del quoziente.' },
-          calc([MC([frac(rac(a), rac(b)), '= ' + rac(frac(a, b)), '= ' + rac(a / b), '= ' + n])])) };
+          calc(pose([frac(rac(a), rac(b)), '= ' + rac(frac(a, b)), '= ' + rac(a / b), '= ' + n]))) };
     }
     if (k === 4){
       /* carré d'une racine, racine d'un carré */
@@ -299,8 +328,9 @@
         traps.push(trap(a * m, 'Le carré porte aussi sur ' + a + ' : ' + a + '² = ' + a * a + '.', 'Il quadrato riguarda anche ' + a + ': ' + a + '² = ' + a * a + '.'));
         traps.push(trap(a * a * m * m, 'Le carré d’une racine redonne le nombre : ' + pw('(' + rac(m) + ')', 2) + ' = ' + m + ', pas ' + m * m + '.', 'Il quadrato di una radice ridà il numero: ' + pw('(' + rac(m) + ')', 2) + ' = ' + m + ', non ' + m * m + '.'));
         return { type: T, text: Q('Calcule.', 'Calcola.', M(e)),
-          part: numPart(n, traps, { fr: 'Le carré d’un produit : (ab)² = a² × b². Et le carré d’une racine redonne le nombre.', it: 'Il quadrato di un prodotto: (ab)² = a² × b². E il quadrato di una radice ridà il numero.' },
-            calc([MC([e, '= ' + pw(a, 2) + ' × ' + pw('(' + rac(m) + ')', 2), '= ' + a * a + ' × ' + m, '= ' + n])])) };
+          part: numPart(n, traps, regles('Le carré d’un produit est le produit des carrés. Et le carré d’une racine redonne le nombre.', 'Il quadrato di un prodotto è il prodotto dei quadrati. E il quadrato di una radice ridà il numero.',
+            ['(' + LA + LB + ')' + SQ + ' = ' + LA + SQ + ' × ' + LB + SQ, pw('(' + rac(LA) + ')', 2) + ' = ' + LA]),
+            calc(pose([e, '= ' + pw(a, 2) + ' × ' + pw('(' + rac(m) + ')', 2), '= ' + a * a + ' × ' + m, '= ' + n]))) };
       }
       a = pick([2, 3, 5, 6, 7, 8, 10, 11, 12, 13]);
       if (c === 1){
@@ -308,13 +338,13 @@
         traps.push(trap(-a, 'Une racine carrée est toujours positive ou nulle : ' + e + ' = ' + rac(a * a) + ' = ' + a + '.', 'Una radice quadrata è sempre positiva o nulla: ' + e + ' = ' + rac(a * a) + ' = ' + a + '.'));
         return { type: T, text: Q('Calcule.', 'Calcola.', M(e)),
           part: numPart(a, traps, { fr: 'Calcule d’abord le carré sous la racine. Le résultat d’une racine carrée n’est jamais négatif.', it: 'Calcola prima il quadrato sotto la radice. Il risultato di una radice quadrata non è mai negativo.' },
-            calc([MC([e, '= ' + rac(a * a), '= ' + a])])) };
+            calc(pose([e, '= ' + rac(a * a), '= ' + a]))) };
       }
       e = pw('(' + rac(a) + ')', 2);
       traps.push(trap(a * a, 'Le carré et la racine carrée se compensent : on retrouve ' + a + ', pas ' + a * a + '.', 'Il quadrato e la radice quadrata si compensano: si ritrova ' + a + ', non ' + a * a + '.'));
       return { type: T, text: Q('Calcule.', 'Calcola.', M(e)),
         part: numPart(a, traps, { fr: 'Par définition, ' + rac('a') + ' est le nombre positif dont le carré vaut a.', it: 'Per definizione, ' + rac('a') + ' è il numero positivo il cui quadrato vale a.' },
-          calc([MC([e, '= ' + a])])) };
+          calc(pose([e, '= ' + a]))) };
     }
     /* deux racines à simplifier avant de réduire : p√(a²m) + q√(b²m) */
     var p, q;
@@ -325,7 +355,7 @@
     return { type: T, text: Q('Simplifie chaque racine, puis réduis.', 'Semplifica ogni radice, poi riduci.', M(e)),
       part: fillPart('= {±0}' + rac(m), [n], [trap([p + q], 'Simplifie d’abord chaque racine : ' + rac(a * a * m) + ' = ' + a + rac(m) + ' et ' + rac(b * b * m) + ' = ' + b + rac(m) + '.', 'Semplifica prima ogni radice: ' + rac(a * a * m) + ' = ' + a + rac(m) + ' e ' + rac(b * b * m) + ' = ' + b + rac(m) + '.')],
         { fr: a * a * m + ' = ' + a * a + ' × ' + m + ' et ' + b * b * m + ' = ' + b * b + ' × ' + m + '.', it: a * a * m + ' = ' + a * a + ' × ' + m + ' e ' + b * b * m + ' = ' + b * b + ' × ' + m + '.' },
-        calc([MC([e, '= ' + poly([[p * a, rac(m)], [q * b, rac(m)]]), '= ' + (n < 0 ? MI : '') + mono(n, rac(m))])])) };
+        calc(pose([e, '= ' + poly([[p * a, rac(m)], [q * b, rac(m)]]), '= ' + (n < 0 ? MI : '') + mono(n, rac(m))]))) };
   }
 
   /* ---------- Développer et réduire ---------- */
@@ -339,7 +369,7 @@
       return { type: { fr: 'Développer', it: 'Sviluppare' }, text: Q('Développe.', 'Sviluppa.', M(e)),
         part: fillPart('= {±0}' + X + ' {±1}', [kk * a, kk * b], traps,
           { fr: 'k(a + b) = ka + kb : multiplie chaque terme de la parenthèse par ' + z(kk) + '. Attention à la règle des signes.', it: 'k(a + b) = ka + kb: moltiplica ogni termine della parentesi per ' + z(kk) + '. Attenzione alla regola dei segni.' },
-          calc([MC([e, '= ' + z(kk) + ' × ' + mono(a, X) + ' ' + (kk < 0 ? '+ (' + z(kk) + ')' : '+ ' + kk) + ' × ' + zp(b), '= ' + lin(kk * a, kk * b)])])) };
+          calc(pose([e, '= ' + z(kk) + ' × ' + mono(a, X) + ' ' + (kk < 0 ? '+ (' + z(kk) + ')' : '+ ' + kk) + ' × ' + zp(b), '= ' + lin(kk * a, kk * b)]))) };
     }
     if (k === 1){
       do { a = nz(-9, 9); b = nz(-9, 9); } while (a + b === 0 || a + b === a * b);
@@ -347,18 +377,18 @@
       traps.push(trap([a * b, a + b], 'Tu as inversé : le nombre devant x est la somme ' + z(a) + ' ' + pm(b) + ', le dernier terme est le produit ' + zp(a) + ' × ' + zp(b) + '.', 'Hai invertito: il numero davanti a x è la somma ' + z(a) + ' ' + pm(b) + ', l’ultimo termine è il prodotto ' + zp(a) + ' × ' + zp(b) + '.'));
       return { type: { fr: 'Développer', it: 'Sviluppare' }, text: Q('Développe et réduis.', 'Sviluppa e riduci.', M(e)),
         part: fillPart('= ' + X + SQ + ' {±0}' + X + ' {±1}', [a + b, a * b], traps, H2,
-          calc([MC([e, '= ' + poly([[1, X + SQ], [b, X], [a, X], [a * b, '']]), '= ' + quad(1, a + b, a * b)])])) };
+          calc(pose([e, '= ' + poly([[1, X + SQ], [b, X], [a, X], [a * b, '']]), '= ' + quad(1, a + b, a * b)]))) };
     }
     if (k === 2){
       do { a = rnd(1, 4); c = rnd(1, 4); b = nz(-7, 7); d = nz(-7, 7); } while ((a === 1 && c === 1) || a * d + b * c === 0);
       e = '(' + lin(a, b) + ')(' + lin(c, d) + ')';
       return { type: { fr: 'Développer', it: 'Sviluppare' }, text: Q('Développe et réduis.', 'Sviluppa e riduci.', M(e)),
         part: fillPart('= {±0}' + X + SQ + ' {±1}' + X + ' {±2}', [a * c, a * d + b * c, b * d], [], H2,
-          calc([MC([e, '= ' + poly([[a * c, X + SQ], [a * d, X], [b * c, X], [b * d, '']]), '= ' + quad(a * c, a * d + b * c, b * d)])])) };
+          calc(pose([e, '= ' + poly([[a * c, X + SQ], [a * d, X], [b * c, X], [b * d, '']]), '= ' + quad(a * c, a * d + b * c, b * d)]))) };
     }
     if (k === 3 || k === 4){
       var T = { fr: 'Identités remarquables', it: 'Prodotti notevoli' }, v = rnd(0, 3);
-      var H = { fr: 'Les trois identités : (a + b)² = a² + 2ab + b², (a − b)² = a² − 2ab + b², (a − b)(a + b) = a² − b².', it: 'I tre prodotti notevoli: (a + b)² = a² + 2ab + b², (a − b)² = a² − 2ab + b², (a − b)(a + b) = a² − b².' };
+      var H = regles('Les trois identités remarquables :', 'I tre prodotti notevoli:', [ID1, ID2, ID3]);
       a = rnd(1, 9);
       if (v === 0 || v === 1){
         var s = v === 0 ? 1 : -1;
@@ -369,7 +399,7 @@
         if (s < 0) traps.push(trap([-2 * a, -a * a], 'Le dernier terme est un carré : (' + MI + a + ')² = +' + a * a + '.', 'L’ultimo termine è un quadrato: (' + MI + a + ')² = +' + a * a + '.'));
         return { type: T, text: Q('Développe et réduis.', 'Sviluppa e riduci.', M(e)),
           part: fillPart('= ' + X + SQ + ' {±0}' + X + ' {±1}', [2 * s * a, a * a], traps, H,
-            calc([MC([e, '= ' + X + SQ + ' ' + (s > 0 ? '+' : MI) + ' 2 × ' + X + ' × ' + a + ' + ' + pw(a, 2), '= ' + quad(1, 2 * s * a, a * a)])])) };
+            calc(pose([e, '= ' + X + SQ + ' ' + (s > 0 ? '+' : MI) + ' 2 × ' + X + ' × ' + a + ' + ' + pw(a, 2), '= ' + quad(1, 2 * s * a, a * a)]))) };
       }
       if (v === 2){
         e = '(' + lin(1, -a) + ')(' + lin(1, a) + ')';
@@ -377,7 +407,7 @@
         traps.push(trap([-2 * a], a + '², c’est ' + a + ' × ' + a + ' = ' + a * a + ', pas 2 × ' + a + '.', a + '² è ' + a + ' × ' + a + ' = ' + a * a + ', non 2 × ' + a + '.'));
         return { type: T, text: Q('Développe et réduis.', 'Sviluppa e riduci.', M(e)),
           part: fillPart('= ' + X + SQ + ' {±0}', [-a * a], traps, H,
-            calc([MC([e, '= ' + X + SQ + ' − ' + pw(a, 2), '= ' + X + SQ + ' − ' + a * a])], 'Les termes en x s’annulent : −' + a + 'x + ' + a + 'x = 0.', 'I termini in x si annullano: −' + a + 'x + ' + a + 'x = 0.')) };
+            calc(pose([e, '= ' + X + SQ + ' − ' + pw(a, 2), '= ' + X + SQ + ' − ' + a * a]), 'Les termes en x s’annulent : −' + a + 'x + ' + a + 'x = 0.', 'I termini in x si annullano: −' + a + 'x + ' + a + 'x = 0.')) };
       }
       c = rnd(2, 5); b = nz(-6, 6);
       e = '(' + lin(c, b) + ')' + SQ;
@@ -385,7 +415,7 @@
       traps.push(trap([c * c, c * b, b * b], 'Le double produit, c’est 2 × ' + c + 'x × ' + zp(b) + ' = ' + z(2 * c * b) + 'x.', 'Il doppio prodotto è 2 × ' + c + 'x × ' + zp(b) + ' = ' + z(2 * c * b) + 'x.'));
       return { type: T, text: Q('Développe et réduis.', 'Sviluppa e riduci.', M(e)),
         part: fillPart('= {0}' + X + SQ + ' {±1}' + X + ' {±2}', [c * c, 2 * c * b, b * b], traps, H,
-          calc([MC([e, '= ' + pw('(' + c + X + ')', 2) + ' ' + (b > 0 ? '+' : MI) + ' 2 × ' + c + X + ' × ' + Math.abs(b) + ' + ' + pw(Math.abs(b), 2), '= ' + quad(c * c, 2 * c * b, b * b)])])) };
+          calc(pose([e, '= ' + pw('(' + c + X + ')', 2) + ' ' + (b > 0 ? '+' : MI) + ' 2 × ' + c + X + ' × ' + Math.abs(b) + ' + ' + pw(Math.abs(b), 2), '= ' + quad(c * c, 2 * c * b, b * b)]))) };
     }
     /* Supprimer une parenthèse précédée du signe moins, puis réduire */
     var p, q, r, s2;
@@ -398,7 +428,7 @@
     return { type: { fr: 'Réduire', it: 'Ridurre' }, text: Q('Supprime la parenthèse, puis réduis.', 'Togli la parentesi, poi riduci.', M(e)),
       part: fillPart('= {±0}' + X + ' {±1}', [q - r, p - s2], traps,
         { fr: 'Le signe « − » devant la parenthèse change le signe de chaque terme. Ensuite, regroupe les x entre eux et les nombres entre eux.', it: 'Il segno «−» davanti alla parentesi cambia il segno di ogni termine. Poi raggruppa le x tra loro e i numeri tra loro.' },
-        calc([MC([e, '= ' + poly([[p, ''], [q, X], [-r, X], [-s2, '']]), '= ' + lin(q - r, p - s2)])])) };
+        calc(pose([e, '= ' + poly([[p, ''], [q, X], [-r, X], [-s2, '']]), '= ' + lin(q - r, p - s2)]))) };
   }
 
   /* ---------- Factoriser ---------- */
@@ -410,7 +440,7 @@
       e = lin(kk * a, kk * b);
       var MAXF = { fr: 'Presque : c’est bien égal, mais on peut factoriser davantage. Cherche le plus grand nombre qui divise ' + kk * a + ' et ' + Math.abs(kk * b) + '.', it: 'Quasi: è uguale, ma si può scomporre ancora. Cerca il più grande numero che divide ' + kk * a + ' e ' + Math.abs(kk * b) + '.' };
       var hint = { fr: 'Cherche le plus grand nombre qui divise à la fois ' + kk * a + ' et ' + Math.abs(kk * b) + ' : c’est le facteur commun.', it: 'Cerca il più grande numero che divide sia ' + kk * a + ' sia ' + Math.abs(kk * b) + ': è il fattore comune.' };
-      var sol = calc([MC([e, '= ' + kk + ' × ' + mono(a, X) + ' ' + (b < 0 ? MI : '+') + ' ' + kk + ' × ' + Math.abs(b), '= ' + kk + '(' + lin(a, b) + ')'])]);
+      var sol = calc(pose([e, '= ' + kk + ' × ' + mono(a, X) + ' ' + (b < 0 ? MI : '+') + ' ' + kk + ' × ' + Math.abs(b), '= ' + kk + '(' + lin(a, b) + ')']));
       if (a === 1) return { type: T, text: Q(TXT[0], TXT[1], M(e)), part: fillPart('= {0}(' + X + ' {±1})', [kk, b], [trap([kk, kk * b], 'Dans la parenthèse, il reste ' + Math.abs(kk * b) + ' ÷ ' + kk + ' = ' + Math.abs(b) + '.', 'Nella parentesi resta ' + Math.abs(kk * b) + ' ÷ ' + kk + ' = ' + Math.abs(b) + '.')], hint, sol) };
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart('= {0}({1}' + X + ' {±2})', [kk, a, b], [], hint, sol,
@@ -423,35 +453,37 @@
         return { type: T, text: Q(TXT[0], TXT[1], M(e)),
           part: fillPart('= ' + X + '(' + X + ' {±0})', [b], [],
             { fr: 'x² = x × x : le facteur commun aux deux termes est x.', it: 'x² = x × x: il fattore comune ai due termini è x.' },
-            calc([MC([e, '= ' + X + ' × ' + X + ' ' + (b < 0 ? MI : '+') + ' ' + Math.abs(b) + ' × ' + X, '= ' + X + '(' + lin(1, b) + ')'])])) };
+            calc(pose([e, '= ' + X + ' × ' + X + ' ' + (b < 0 ? MI : '+') + ' ' + Math.abs(b) + ' × ' + X, '= ' + X + '(' + lin(1, b) + ')']))) };
       }
       kk = rnd(2, 6);
       e = poly([[kk, X + SQ], [kk * b, X]]);
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart('= {0}' + X + '(' + X + ' {±1})', [kk, b], [trap([kk, kk * b], 'Dans la parenthèse, il reste ' + Math.abs(kk * b) + ' ÷ ' + kk + ' = ' + Math.abs(b) + '.', 'Nella parentesi resta ' + Math.abs(kk * b) + ' ÷ ' + kk + ' = ' + Math.abs(b) + '.')],
           { fr: 'Le facteur commun contient un nombre et une lettre : ' + kk + 'x.', it: 'Il fattore comune contiene un numero e una lettera: ' + kk + 'x.' },
-          calc([MC([e, '= ' + kk + X + ' × ' + X + ' ' + (b < 0 ? MI : '+') + ' ' + kk + X + ' × ' + Math.abs(b), '= ' + kk + X + '(' + lin(1, b) + ')'])])) };
+          calc(pose([e, '= ' + kk + X + ' × ' + X + ' ' + (b < 0 ? MI : '+') + ' ' + kk + X + ' × ' + Math.abs(b), '= ' + kk + X + '(' + lin(1, b) + ')']))) };
     }
-    var HD = { fr: 'Différence de deux carrés : a² − b² = (a − b)(a + b).', it: 'Differenza di due quadrati: a² − b² = (a − b)(a + b).' };
+    var HD = regles('C’est une différence de deux carrés :', 'È una differenza di due quadrati:', [LA + SQ + ' − ' + LB + SQ + ' = (' + LA + ' − ' + LB + ')(' + LA + ' + ' + LB + ')']);
     if (k === 2){
       a = rnd(2, 12); e = X + SQ + ' − ' + a * a;
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart('= (' + X + ' − {0})(' + X + ' + {1})', [a, a], [trap([a * a, a * a], a * a + ' est le carré de ' + a + ' : c’est ' + a + ' qu’on écrit dans les parenthèses.', a * a + ' è il quadrato di ' + a + ': nelle parentesi si scrive ' + a + '.')], HD,
-          calc([MC([e, '= ' + X + SQ + ' − ' + pw(a, 2), '= (' + lin(1, -a) + ')(' + lin(1, a) + ')'])])) };
+          calc(pose([e, '= ' + X + SQ + ' − ' + pw(a, 2), '= (' + lin(1, -a) + ')(' + lin(1, a) + ')']))) };
     }
     if (k === 3){
       a = rnd(2, 5); b = rnd(1, 9); e = a * a + X + SQ + ' − ' + b * b;
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart('= ({0}' + X + ' − {1})({2}' + X + ' + {3})', [a, b, a, b], [trap([a * a, b * b, a * a, b * b], a * a + 'x² est le carré de ' + a + 'x, et ' + b * b + ' est le carré de ' + b + '.', a * a + 'x² è il quadrato di ' + a + 'x, e ' + b * b + ' è il quadrato di ' + b + '.')], HD,
-          calc([MC([e, '= ' + pw('(' + a + X + ')', 2) + ' − ' + pw(b, 2), '= (' + lin(a, -b) + ')(' + lin(a, b) + ')'])])) };
+          calc(pose([e, '= ' + pw('(' + a + X + ')', 2) + ' − ' + pw(b, 2), '= (' + lin(a, -b) + ')(' + lin(a, b) + ')']))) };
     }
     if (k === 4){
       a = rnd(1, 9); var s = pick([1, -1]);
       e = quad(1, 2 * s * a, a * a);
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart('= (' + X + ' {±0})' + SQ, [s * a], [trap([s * a * a], a * a + ' est le carré de ' + a + ' : c’est ' + a + ' qu’on écrit dans la parenthèse.', a * a + ' è il quadrato di ' + a + ': nella parentesi si scrive ' + a + '.')].concat(a !== 1 ? [trap([2 * s * a], 2 * a + ' est le double produit 2 × ' + a + ' : dans la parenthèse on écrit ' + a + '.', 2 * a + ' è il doppio prodotto 2 × ' + a + ': nella parentesi si scrive ' + a + '.')] : []),
-          { fr: 'Reconnais une identité remarquable : a² ' + (s > 0 ? '+' : MI) + ' 2ab + b² = (a ' + (s > 0 ? '+' : MI) + ' b)². Ici a = x et b² = ' + a * a + '.', it: 'Riconosci un prodotto notevole: a² ' + (s > 0 ? '+' : MI) + ' 2ab + b² = (a ' + (s > 0 ? '+' : MI) + ' b)². Qui a = x e b² = ' + a * a + '.' },
-          calc([MC([e, '= ' + X + SQ + ' ' + (s > 0 ? '+' : MI) + ' 2 × ' + X + ' × ' + a + ' + ' + pw(a, 2), '= (' + lin(1, s * a) + ')' + SQ])])) };
+          regles('Reconnais une identité remarquable :', 'Riconosci un prodotto notevole:',
+            [LA + SQ + ' ' + (s > 0 ? '+' : MI) + ' 2' + LA + LB + ' + ' + LB + SQ + ' = (' + LA + ' ' + (s > 0 ? '+' : MI) + ' ' + LB + ')' + SQ],
+            'Ici ' + M(LA + ' = ' + X) + ' et ' + M(LB + SQ + ' = ' + a * a) + '.', 'Qui ' + M(LA + ' = ' + X) + ' e ' + M(LB + SQ + ' = ' + a * a) + '.'),
+          calc(pose([e, '= ' + X + SQ + ' ' + (s > 0 ? '+' : MI) + ' 2 × ' + X + ' × ' + a + ' + ' + pw(a, 2), '= (' + lin(1, s * a) + ')' + SQ]))) };
     }
     /* Une parenthèse en facteur commun */
     var p, q, r, s3, minus = Math.random() < 0.5, A, B;
@@ -462,7 +494,7 @@
     return { type: T, text: Q(TXT[0], TXT[1], MC([F + '(' + lin(1, q) + ')', (minus ? MI : '+') + ' ' + F + '(' + lin(r, s3) + ')'])),
       part: fillPart('= ' + F + '({±0}' + X + ' {±1})', [A, B], traps,
         { fr: 'La parenthèse ' + F + ' apparaît dans les deux termes : c’est le facteur commun. Dans le crochet, écris ce qui reste, puis réduis.', it: 'La parentesi ' + F + ' compare nei due termini: è il fattore comune. Nella parentesi quadra scrivi ciò che resta, poi riduci.' },
-        calc([MC([F + '(' + lin(1, q) + ')', (minus ? MI : '+') + ' ' + F + '(' + lin(r, s3) + ')', '= ' + F + '[(' + lin(1, q) + ') ' + (minus ? MI : '+') + ' (' + lin(r, s3) + ')]', '= ' + F + '(' + poly([[1, X], [q, ''], [minus ? -r : r, X], [minus ? -s3 : s3, '']]) + ')', '= ' + F + '(' + lin(A, B) + ')'])])) };
+        calc(pose(['<span class="mc">' + F + '(' + lin(1, q) + ')</span> <span class="mc">' + (minus ? MI : '+') + ' ' + F + '(' + lin(r, s3) + ')</span>', '= ' + F + '[(' + lin(1, q) + ') ' + (minus ? MI : '+') + ' (' + lin(r, s3) + ')]', '= ' + F + '(' + poly([[1, X], [q, ''], [minus ? -r : r, X], [minus ? -s3 : s3, '']]) + ')', '= ' + F + '(' + lin(A, B) + ')']))) };
   }
 
   /* ---------- Équations ---------- */
@@ -477,7 +509,7 @@
       traps.push(trap((c + b) / a, 'Erreur de signe : pour enlever ' + pm(b) + ' à gauche, on fait l’opération contraire des deux côtés.', 'Errore di segno: per togliere ' + pm(b) + ' a sinistra, si fa l’operazione contraria dai due lati.'));
       traps.push(trap(c - b, 'Il reste à diviser par ' + z(a) + ' : ' + mono(a, X).replace(/^/, a < 0 ? MI : '') + ' = ' + z(c - b) + '.', 'Resta da dividere per ' + z(a) + ': ' + mono(a, X).replace(/^/, a < 0 ? MI : '') + ' = ' + z(c - b) + '.'));
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
-        part: numPart(x0, traps, H1, calc([MC([e, '⇔ ' + lin(a, 0) + ' = ' + z(c) + ' ' + pm(-b), '⇔ ' + lin(a, 0) + ' = ' + z(c - b), '⇔ ' + X + ' = ' + frac(z(c - b), z(a)), '⇔ ' + X + ' = ' + z(x0)])],
+        part: numPart(x0, traps, H1, calc(pose([e, '⇔ ' + lin(a, 0) + ' = ' + z(c) + ' ' + pm(-b), '⇔ ' + lin(a, 0) + ' = ' + z(c - b), '⇔ ' + X + ' = ' + frac(z(c - b), z(a)), '⇔ ' + X + ' = ' + z(x0)]),
           'Vérification : ' + z(a) + ' × ' + zp(x0) + ' ' + pm(b) + ' = ' + z(c) + '.', 'Verifica: ' + z(a) + ' × ' + zp(x0) + ' ' + pm(b) + ' = ' + z(c) + '.'), XL) };
     }
     if (k === 2){
@@ -488,7 +520,7 @@
       traps.push(trap((d + b) / (a - c), 'Erreur de signe avec les nombres : on fait la même opération des deux côtés.', 'Errore di segno con i numeri: si fa la stessa operazione dai due lati.'));
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: numPart(x0, traps, { fr: 'Regroupe les x à gauche et les nombres à droite, en faisant la même opération des deux côtés.', it: 'Raggruppa le x a sinistra e i numeri a destra, facendo la stessa operazione dai due lati.' },
-          calc([MC([e, '⇔ ' + lin(a, 0) + ' ' + (c < 0 ? '+' : MI) + ' ' + mono(c, X) + ' = ' + z(d) + ' ' + pm(-b), '⇔ ' + lin(a - c, 0) + ' = ' + z(d - b)].concat(a - c === 1 ? [] : ['⇔ ' + X + ' = ' + z(x0)]))],
+          calc(pose([e, '⇔ ' + lin(a, 0) + ' ' + (c < 0 ? '+' : MI) + ' ' + mono(c, X) + ' = ' + z(d) + ' ' + pm(-b), '⇔ ' + lin(a - c, 0) + ' = ' + z(d - b)].concat(a - c === 1 ? [] : ['⇔ ' + X + ' = ' + z(x0)])),
             'Vérification : à gauche ' + z(a * x0 + b) + ', à droite ' + z(c * x0 + d) + '.', 'Verifica: a sinistra ' + z(a * x0 + b) + ', a destra ' + z(c * x0 + d) + '.'), XL) };
     }
     if (k === 3){
@@ -502,7 +534,7 @@
       st.push('⇔ ' + X + ' = ' + (c - b < 0 ? MI : '') + frac(Math.abs(c - b), a));
       if (g !== 1) st.push('⇔ ' + X + ' = ' + (n < 0 ? MI : '') + frac(Math.abs(n), dn));
       return { type: T, text: Q('Résous l’équation. Donne la solution sous forme de fraction irréductible.', 'Risolvi l’equazione. Dai la soluzione come frazione ridotta ai minimi termini.', M(e)),
-        part: fillPart(X + ' = {s0}' + frac('{0}', '{1}'), [n, dn], traps, H1, calc([MC(st)]), { frac: [[0, 1]] }) };
+        part: fillPart(X + ' = {s0}' + frac('{0}', '{1}'), [n, dn], traps, H1, calc(pose(st)), { frac: [[0, 1]] }) };
     }
     var SG = { r: 'mid', msg: { fr: 'Presque : vérifie les signes. Pour chaque facteur, résous « facteur = 0 ». Par exemple, x − 3 = 0 donne x = 3.', it: 'Quasi: controlla i segni. Per ogni fattore risolvi «fattore = 0». Per esempio, x − 3 = 0 dà x = 3.' } };
     var absSame = function(v, r){ var s = function(t){ return t.map(Math.abs).sort(function(u, w){ return u - w; }).join(';'); }; return s(v) === s(r); };
@@ -515,7 +547,7 @@
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart(X + ' = {±0}' + OU + X + ' = {±1}', roots, [],
           { fr: 'Un produit est nul si l’un de ses facteurs est nul. Résous chaque petite équation : facteur = 0.', it: 'Un prodotto è nullo se uno dei suoi fattori è nullo. Risolvi ogni piccola equazione: fattore = 0.' },
-          calc([MC([e, '⇔ ' + lin(kk, -kk * p) + ' = 0' + OU + lin(1, -q) + ' = 0', '⇔ ' + X + ' = ' + z(p) + OU + X + ' = ' + z(q)])]),
+          calc(pose([e, '⇔ ' + lin(kk, -kk * p) + ' = 0' + OU + lin(1, -q) + ' = 0', '⇔ ' + X + ' = ' + z(p) + OU + X + ' = ' + z(q)])),
           { set: true, check: function(v){ return absSame(v, roots) ? SG : null; } }) };
     }
     if (k === 5){
@@ -525,7 +557,7 @@
       return { type: T, text: Q(TXT[0], TXT[1], M(e)),
         part: fillPart(X + ' = {±0}' + OU + X + ' = {±1}', rs, [trap([a * a / 2, -a * a / 2], 'x² = ' + a * a + ' ne veut pas dire 2x = ' + a * a + ' : on cherche les nombres dont le carré vaut ' + a * a + '.', 'x² = ' + a * a + ' non vuol dire 2x = ' + a * a + ': si cercano i numeri il cui quadrato vale ' + a * a + '.')],
           { fr: 'Deux nombres ont pour carré ' + a * a + ' : un nombre positif et son opposé.', it: 'Due numeri hanno come quadrato ' + a * a + ': un numero positivo e il suo opposto.' },
-          calc([MC([e, '⇔ ' + X + ' = ' + rac(a * a) + OU + X + ' = ' + MI + rac(a * a), '⇔ ' + X + ' = ' + a + OU + X + ' = ' + MI + a])]),
+          calc(pose([e, '⇔ ' + X + ' = ' + rac(a * a) + OU + X + ' = ' + MI + rac(a * a), '⇔ ' + X + ' = ' + a + OU + X + ' = ' + MI + a])),
           { set: true, check: function(v){ return Math.abs(v[0]) === a && Math.abs(v[1]) === a ? { r: 'mid', msg: { fr: 'Presque : il y a deux solutions différentes, ' + a + ' et son opposé ' + MI + a + '.', it: 'Quasi: ci sono due soluzioni diverse, ' + a + ' e il suo opposto ' + MI + a + '.' } } : null; } }) };
     }
     /* Combien de solutions pour x² = a ? */
@@ -539,7 +571,7 @@
     ];
     return { type: T, text: Q('Combien de solutions cette équation a-t-elle ?', 'Quante soluzioni ha questa equazione?', M(e)),
       part: { kind: 'choice', choices: [{ fr: 'Aucune solution', it: 'Nessuna soluzione' }, { fr: 'Une seule solution', it: 'Una sola soluzione' }, { fr: 'Deux solutions', it: 'Due soluzioni' }], correct: cas + 1, fb: FB,
-        hint: { fr: 'x² = a : deux solutions si a est positif, une seule si a = 0, aucune si a est négatif.', it: 'x² = a: due soluzioni se a è positivo, una sola se a = 0, nessuna se a è negativo.' } } };
+        hint: { fr: 'L’équation ' + M(X + SQ + ' = ' + LA) + ' a deux solutions si ' + M(LA) + ' est positif, une seule si ' + M(LA + ' = 0') + ', aucune si ' + M(LA) + ' est négatif.', it: 'L’equazione ' + M(X + SQ + ' = ' + LA) + ' ha due soluzioni se ' + M(LA) + ' è positivo, una sola se ' + M(LA + ' = 0') + ', nessuna se ' + M(LA) + ' è negativo.' } } };
   }
 
   /* ---------- Inéquations et intervalles ---------- */
@@ -564,7 +596,6 @@
       do { a = nz(-6, 6); } while (Math.abs(a) === 1);
       v = nz(-9, 9); b = nz(-12, 12); c = a * v + b; s = pick(['lt', 'le', 'gt', 'ge']); s2 = a < 0 ? FLIP[s] : s;
       e = ineq(lin(a, b), s, z(c));
-      var STEPS = MC([e, '⇔ ' + ineq(lin(a, 0), s, z(c - b)), '⇔ ' + ineq(X, s2, z(v))]);
       var okFr = 'On garde les x à gauche : ' + ineq(lin(a, 0), s, z(c - b)) + ', puis on divise par ' + z(a) + (a < 0 ? ', un nombre négatif : le sens change.' : ', un nombre positif : le sens ne change pas.');
       var okIt = 'Si tengono le x a sinistra: ' + ineq(lin(a, 0), s, z(c - b)) + ', poi si divide per ' + z(a) + (a < 0 ? ', un numero negativo: il verso cambia.' : ', un numero positivo: il verso non cambia.');
       var sensFr = a < 0 ? 'Tu as divisé par ' + z(a) + ', un nombre négatif, sans changer le sens de l’inégalité.' : 'Tu as changé le sens de l’inégalité. On ne le change que si on multiplie ou divise par un nombre négatif, et ici on divise par ' + a + '.';
@@ -644,14 +675,14 @@
     function(){
       var a = rnd(2, 9), b = rnd(2, 9), c = rnd(2, 9), e = a + ' + ' + b + ' × ' + c;
       return qcm(M(e) + ' est égal à :', M(e) + ' è uguale a:', [M(a + b * c), M((a + b) * c), M(a * b + c), M(a + b + c)],
-        { fr: 'La multiplication d’abord : ' + M(e + ' = ' + a + ' + ' + b * c + ' = ' + (a + b * c)) + '.', it: 'Prima la moltiplicazione: ' + M(e + ' = ' + a + ' + ' + b * c + ' = ' + (a + b * c)) + '.' });
+        { fr: 'La multiplication passe avant l’addition.', it: 'La moltiplicazione viene prima dell’addizione.', calc: calc(pose([e, '= ' + a + ' + ' + b * c, '= ' + (a + b * c)])) });
     },
     function(){
       var a = pick([2, 3, 5, 7, 10]), m, n;
       do { m = rnd(2, 7); n = rnd(2, 7); } while (m === n || m + n === m * n);
       var e = pw(a, m) + ' × ' + pw(a, n);
       return qcm(M(e) + ' est égal à :', M(e) + ' è uguale a:', [M(pw(a, m + n)), M(pw(a, m * n)), M(pw(2 * a, m + n)), M(pw(a * a, m * n))],
-        { fr: 'Même nombre, produit : on additionne les exposants. ' + M(e + ' = ' + pw(a, m + ' + ' + n) + ' = ' + pw(a, m + n)) + '.', it: 'Stesso numero, prodotto: si sommano gli esponenti. ' + M(e + ' = ' + pw(a, m + ' + ' + n) + ' = ' + pw(a, m + n)) + '.' });
+        { fr: 'Même nombre, produit : on additionne les exposants.', it: 'Stesso numero, prodotto: si sommano gli esponenti.', calc: calc(pose([e, '= ' + pw(a, m + ' + ' + n), '= ' + pw(a, m + n)])) });
     },
     function(){
       var a, b, c, d, n, dn, g;
@@ -659,13 +690,15 @@
       while (b === d || gcd(a, b) !== 1 || gcd(c, d) !== 1 || dn === 1 || (a + c) * dn === n * (b + d));
       var e = frac(a, b) + ' + ' + frac(c, d), l = b * d / gcd(b, d);
       return qcm(M(e) + ' est égal à :', M(e) + ' è uguale a:', [M(frac(n, dn)), M(frac(a + c, b + d)), M(frac(a + c, b * d)), M(frac(a * c, b * d))],
-        { fr: 'Dénominateur commun ' + l + ' : ' + M(frac(a * l / b, l) + ' + ' + frac(c * l / d, l) + ' = ' + frac(a * l / b + c * l / d, l)) + (a * l / b + c * l / d !== n ? ', soit ' + M(frac(n, dn)) + '.' : '.') + ' On n’additionne jamais les dénominateurs.', it: 'Denominatore comune ' + l + ': ' + M(frac(a * l / b, l) + ' + ' + frac(c * l / d, l) + ' = ' + frac(a * l / b + c * l / d, l)) + (a * l / b + c * l / d !== n ? ', cioè ' + M(frac(n, dn)) + '.' : '.') + ' I denominatori non si sommano mai.' });
+        { fr: 'On met les deux fractions au même dénominateur, ' + l + '. On n’additionne jamais les dénominateurs.', it: 'Si portano le due frazioni allo stesso denominatore, ' + l + '. I denominatori non si sommano mai.',
+          calc: calc(pose([e, '= ' + frac(a * l / b, l) + ' + ' + frac(c * l / d, l), '= ' + frac(a * l / b + c * l / d, l)].concat(a * l / b + c * l / d !== n ? ['= ' + frac(n, dn)] : []))) });
     },
     function(){
       var a, m, n;
       do { a = pick([2, 3, 4, 5, 6]); m = pick([2, 3, 5, 6, 7]); n = a * a * m; } while (a === m || n > 300);
       return qcm(M(rac(n)) + ' est égal à :', M(rac(n)) + ' è uguale a:', [M(a + rac(m)), M(m + rac(a)), M(a * a + rac(m)), M(a + rac(2 * m))],
-        { fr: M(rac(n) + ' = ' + rac(a * a + ' × ' + m) + ' = ' + a + rac(m)) + ', car ' + M(rac(a * a) + ' = ' + a) + '.', it: M(rac(n) + ' = ' + rac(a * a + ' × ' + m) + ' = ' + a + rac(m)) + ', perché ' + M(rac(a * a) + ' = ' + a) + '.' });
+        { fr: 'On fait apparaître le carré ' + a * a + ' sous la racine, car ' + M(rac(a * a) + ' = ' + a) + '.', it: 'Si fa comparire il quadrato ' + a * a + ' sotto la radice, perché ' + M(rac(a * a) + ' = ' + a) + '.',
+          calc: calc(pose([rac(n), '= ' + rac(a * a + ' × ' + m), '= ' + rac(a * a) + ' × ' + rac(m), '= ' + a + rac(m)])) });
     },
     function(){
       var kk = pick([2, 3, 4, 5, -2, -3, -4]), a = rnd(2, 5), b = nz(-7, 7), e = z(kk) + '(' + lin(a, b) + ')';
@@ -680,7 +713,7 @@
     function(){
       var a = rnd(3, 12), e = X + SQ + ' − ' + a * a;
       return qcm('La forme factorisée de ' + M(e) + ' est :', 'La forma scomposta di ' + M(e) + ' è:', [M('(' + lin(1, -a) + ')(' + lin(1, a) + ')'), M('(' + lin(1, -a) + ')' + SQ), M('(' + lin(1, -a * a) + ')(' + lin(1, 1) + ')'), M(X + '(' + lin(1, -a * a) + ')')],
-        { fr: 'Différence de deux carrés : ' + M(e + ' = ' + X + SQ + ' − ' + a + '² = (' + lin(1, -a) + ')(' + lin(1, a) + ')') + '.', it: 'Differenza di due quadrati: ' + M(e + ' = ' + X + SQ + ' − ' + a + '² = (' + lin(1, -a) + ')(' + lin(1, a) + ')') + '.' });
+        { fr: 'C’est une différence de deux carrés.', it: 'È una differenza di due quadrati.', calc: calc(pose([e, '= ' + X + SQ + ' − ' + pw(a, 2), '= (' + lin(1, -a) + ')(' + lin(1, a) + ')'])) });
     },
     function(){
       var a, c, x0, b, d;
@@ -712,19 +745,20 @@
       var xv = -rnd(2, 5), a = rnd(2, 4), b = nz(-9, 9), e = poly([[a, X + SQ], [b, '']]), ans = a * xv * xv + b;
       var XV = M(X + ' = ' + z(xv));
       return qcm('Pour ' + XV + ', l’expression ' + M(e) + ' vaut :', 'Per ' + XV + ', l’espressione ' + M(e) + ' vale:', [M(z(ans)), M(z(-a * xv * xv + b)), M(z(a * xv * a * xv + b)), M(z(2 * a * xv + b))],
-        { fr: M(a + ' × ' + pw('(' + z(xv) + ')', 2) + ' ' + pm(b) + ' = ' + a + ' × ' + xv * xv + ' ' + pm(b) + ' = ' + z(ans)) + '. Le carré d’un nombre négatif est positif.', it: M(a + ' × ' + pw('(' + z(xv) + ')', 2) + ' ' + pm(b) + ' = ' + a + ' × ' + xv * xv + ' ' + pm(b) + ' = ' + z(ans)) + '. Il quadrato di un numero negativo è positivo.' });
+        { fr: 'On remplace x par ' + z(xv) + ', entre parenthèses. Le carré d’un nombre négatif est positif.', it: 'Si sostituisce x con ' + z(xv) + ', tra parentesi. Il quadrato di un numero negativo è positivo.',
+          calc: calc(pose([a + ' × ' + pw('(' + z(xv) + ')', 2) + ' ' + pm(b), '= ' + a + ' × ' + xv * xv + ' ' + pm(b), '= ' + z(a * xv * xv) + ' ' + pm(b), '= ' + z(ans)])) });
     },
     function(){
       var p, q, r, s;
       do { p = rnd(2, 12); q = rnd(1, 4); r = rnd(2, 9); s = rnd(1, 9); } while (q === r || p === s || q + r === q - r);
       var e = poly([[p, ''], [q, X]]) + ' − (' + lin(r, -s) + ')';
       return qcm(M(e) + ' est égal à :', M(e) + ' è uguale a:', [M(poly([[p + s, ''], [q - r, X]])), M(poly([[p - s, ''], [q - r, X]])), M(poly([[p + s, ''], [q + r, X]])), M(poly([[p - s, ''], [q + r, X]]))],
-        { fr: 'Le signe « − » change tous les signes de la parenthèse : ' + M(e + ' = ' + poly([[p, ''], [q, X], [-r, X], [s, '']])) + ', soit ' + M(poly([[p + s, ''], [q - r, X]])) + '.', it: 'Il segno «−» cambia tutti i segni della parentesi: ' + M(e + ' = ' + poly([[p, ''], [q, X], [-r, X], [s, '']])) + ', cioè ' + M(poly([[p + s, ''], [q - r, X]])) + '.' });
+        { fr: 'Le signe « − » change tous les signes de la parenthèse.', it: 'Il segno «−» cambia tutti i segni della parentesi.', calc: calc(pose([e, '= ' + poly([[p, ''], [q, X], [-r, X], [s, '']]), '= ' + poly([[p + s, ''], [q - r, X]])])) });
     }
   ];
 
   CHAPS.push({
-    id: 'c3', num: 3, paged: true,
+    id: 'c3', num: 3, paged: true, sym: '<span class="m"><i>x</i></span>',
     title: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     short: { fr: 'Calcul littéral', it: 'Calcolo letterale' },
     sub: { fr: 'Fractions, puissances, racines, développer, factoriser, équations, inéquations', it: 'Frazioni, potenze, radici, sviluppare, scomporre, equazioni, disequazioni' },
@@ -739,8 +773,8 @@
       { k: 'eval', fr: 'Je me prépare à l’évaluation', it: 'Mi preparo alla verifica', chip: { fr: 'Évaluation', it: 'Verifica' } }
     ],
     exLead: {
-      fr: 'Les exercices du manuel, corrigés pas à pas. Fais chaque exercice sur ton cahier, puis compare avec la solution. Pour les QCM, touche ta réponse. Si tu bloques : l’indice.',
-      it: 'Gli esercizi del libro, corretti passo per passo. Fai ogni esercizio sul quaderno, poi confronta con la soluzione. Per i quiz, tocca la tua risposta. Se ti blocchi: l’indizio.'
+      fr: 'Fais chaque exercice sur ton cahier, puis compare avec la solution. Pour les QCM, touche ta réponse. Si tu bloques : l’indice.',
+      it: 'Fai ogni esercizio sul quaderno, poi confronta con la soluzione. Per i quiz, tocca la tua risposta. Se ti blocchi: l’indizio.'
     },
     modes: [
       { k: 'calc', fr: 'Calculs', it: 'Calcoli' },

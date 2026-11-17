@@ -43,7 +43,7 @@
     if (home && HK){
       var c = document.createElement('div');
       c.className = 'coach'; c.setAttribute('data-owl-host', '');
-      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">' + typo('Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices du livre, puis l’entraînement.', true) + '</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi del libro, poi l’allenamento.</span></div>';
+      c.innerHTML = '<div class="owl-slot"></div><div class="bubble"><span class="fr">' + typo('Salut, moi c’est Hector ! Choisis un chapitre. On avance pas à pas : le cours, les exercices, puis l’entraînement.', true) + '</span><span class="it">Ciao, sono Hector! Scegli un capitolo. Andiamo un passo alla volta: la lezione, gli esercizi, poi l’allenamento.</span></div>';
       home.appendChild(c);
       var o = mkOwl($('.owl-slot', c), {});
       if (o) setTimeout(function(){ try { o.anim('salut'); } catch (e) {} }, 500);

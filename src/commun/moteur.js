@@ -1,4 +1,4 @@
-  /* Moteur des chapitres : exercices du livre, entraînement, contrôle blanc, sommaire du cours. Une instance par chapitre. */
+  /* Moteur des chapitres : exercices, entraînement, contrôle blanc, sommaire du cours. Une instance par chapitre. */
   var EX_ALL = (typeof EXOS !== 'undefined' ? EXOS : []).slice();
   EX_ALL.forEach(function(e, i){ if (!e.ch) e.ch = 'c10'; e._i = i; });
   function pk(e, j){ return e.id + ':' + j; }
@@ -24,20 +24,20 @@
     function gIndex(k){ for (var i = 0; i < groups.length; i++) if (groups[i].k === k) return i; return 99; }
     function rank(e){ var i = (c.order || []).indexOf(e.id); return gIndex(e.group) * 100000 + (i < 0 ? 50000 + e._i : i); }
     EX.sort(function(a, b){ return rank(a) - rank(b); });
+    EX.forEach(function(e, i){ e.n = i + 1; });      /* numéro affiché : celui de l'application, dans l'ordre de la liste */
 
-    /* ---------- Exercices du livre ---------- */
-    var vEx = mkView('exercices', c, vhead({ fr: 'Les exercices du livre', it: 'Gli esercizi del libro' }, { fr: 'Exercices', it: 'Esercizi' }, c.exLead) +
+    /* ---------- Exercices ---------- */
+    var vEx = mkView('exercices', c, vhead(c.title, { fr: 'Exercices', it: 'Esercizi' }, c.exLead) +
       '<div class="summary"><div class="row"><span class="ui"><span class="fr">Exercices réussis</span><span class="it">Esercizi risolti</span></span><span class="big ex-count">0 / 0</span></div><div class="prog"><i class="ex-bar"></i></div></div>' +
       '<div class="chips ui ex-filter" role="group" aria-label="Filtre">' + chip('f', 'all', { fr: 'Tous', it: 'Tutti' }, true) +
       groups.map(function(g){ return chip('f', g.k, g.chip || g); }).join('') + chip('f', 'todo', { fr: 'À faire', it: 'Da fare' }) + '</div><div class="ex-list"></div>');
     var listEl = $('.ex-list', vEx), filter = 'all', opened = {}, listed = false;
     function cardHead(e){
-      var cap = /^cap/.test(e.id), n = cap ? 'Cap.<br>' + String(e.num).replace(/\D/g, '') : esc(e.num), L = curLang(), bits = [];
-      if (e.page) bits.push('p.' + NB + e.page); else if (e.src) bits.push(esc(e.src[L]));
+      var L = curLang(), bits = [], nq = e.parts.length;
       if (e.stars) bits.push('<span class="stars" aria-label="' + e.stars + ' / 3">' + starStr(e.stars) + '</span>');
       if (e.tag) bits.push(esc(e.tag[L]));
-      if (e.parts.length > 1 || e.parts[0].kind !== 'self') bits.push(e.parts.length + ' Q');
-      return '<button class="exo-h" type="button" aria-expanded="' + (opened[e.id] ? 'true' : 'false') + '"><span class="exo-n' + (cap ? ' cap' : '') + (e.plus ? ' plus' : '') + '">' + n + '</span>' +
+      if (nq > 1) bits.push(nq + (L === 'it' ? ' domande' : ' questions'));
+      return '<button class="exo-h" type="button" aria-expanded="' + (opened[e.id] ? 'true' : 'false') + '"><span class="exo-n' + (e.plus ? ' plus' : '') + '">' + e.n + '</span>' +
         '<span><span class="exo-t">' + biIn(e.title) + '</span><span class="exo-m">' + bits.join(' · ') + '</span></span><span class="exo-s" aria-hidden="true">✓</span></button>';
     }
     function cardClass(e){ var d = nDone(e); return 'exo' + (d === e.parts.length ? ' done' : d ? ' part-done' : '') + (opened[e.id] ? ' open' : ''); }
@@ -65,7 +65,7 @@
         art.classList.toggle('open', open);
       });
     }
-    function markLinks(e){ $$('[data-exo="' + e.id + '"]').forEach(function(b){ b.classList.toggle('done', isDone(e)); }); }
+    function markLinks(e){ $$('[data-exo="' + e.id + '"]').forEach(function(b){ b.classList.toggle('done', isDone(e)); var k = b.querySelector('b'); if (k) k.textContent = e.n; }); }
     function refreshCard(e){
       markLinks(e);
       var art = document.getElementById('x-' + e.id);
@@ -197,7 +197,7 @@
           x.disabled = true; x.classList.remove('sel');
           if (k === q.ok) x.classList.add('ok'); else if (k === q.pick) x.classList.add('ko');
         });
-        $('.fbw', div).innerHTML = '<p class="fb ' + (good ? 'ok' : 'ko') + '">' + biIn(good ? { fr: 'Juste : +2 points.', it: 'Giusto: +2 punti.' } : q.pick < 0 ? { fr: 'Pas de réponse.', it: 'Nessuna risposta.' } : { fr: 'Faux.', it: 'Sbagliato.' }) + '</p><div class="panel">' + bi({ fr: '<p>' + q.exp.fr + '</p>', it: '<p>' + q.exp.it + '</p>' }) + '</div>';
+        $('.fbw', div).innerHTML = '<p class="fb ' + (good ? 'ok' : 'ko') + '">' + biIn(good ? { fr: 'Juste : +2 points.', it: 'Giusto: +2 punti.' } : q.pick < 0 ? { fr: 'Pas de réponse.', it: 'Nessuna risposta.' } : { fr: 'Faux.', it: 'Sbagliato.' }) + '</p><div class="panel">' + bi({ fr: '<p>' + q.exp.fr + '</p>', it: '<p>' + q.exp.it + '</p>' }) + (q.exp.calc || '') + '</div>';
       });
       if (st.bestTest == null || score > st.bestTest){ st.bestTest = score; save(); }
       var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : c.low;
@@ -297,8 +297,8 @@
     var h = '';
     CHAPS.forEach(function(c, i){
       var s = CH[c.id].stats(), pct = s.total ? Math.round(s.done / s.total * 100) : 0, last = i === CHAPS.length - 1 && CHAPS.length > 1;
-      h += '<a class="chap" href="#' + c.id + '/' + (CH[c.id].st.v || 'cours') + '" data-ch="' + c.id + '"><span class="chap-n">' + c.num + '</span><span class="chap-b">' +
-        '<span class="chap-k ui"><span class="fr">Chapitre ' + c.num + '</span><span class="it">Capitolo ' + c.num + '</span>' + (last ? '<span class="chap-new"><span class="fr">Nouveau</span><span class="it">Nuovo</span></span>' : '') + '</span>' +
+      h += '<a class="chap" href="#' + c.id + '/' + (CH[c.id].st.v || 'cours') + '" data-ch="' + c.id + '"><span class="chap-n">' + c.sym + '</span><span class="chap-b">' +
+        (last ? '<span class="chap-k ui"><span class="chap-new"><span class="fr">Nouveau</span><span class="it">Nuovo</span></span></span>' : '') +
         '<span class="chap-t"><span class="fr">' + c.title.fr + '</span><span class="it sub-it">' + c.title.it + '</span></span>' +
         '<span class="chap-s"><span class="fr">' + typo(c.sub.fr, true) + '</span><span class="it">' + c.sub.it + '</span></span>' +
         '<span class="prog"><i style="width:' + pct + '%"></i></span>' +
@@ -344,7 +344,7 @@
       });
     }
     $('.brand-t').innerHTML = home ? 'SCOLAIR' : '<span class="fr">' + ch.c.short.fr + '</span><span class="it">' + ch.c.short.it + '</span>';
-    $('.brand-s').innerHTML = home ? '<span class="fr">Maths · Seconde</span><span class="it">Matematica · Seconde</span>' : '<span class="fr">Chapitre ' + ch.c.num + ' · SCOLAIR</span><span class="it">Capitolo ' + ch.c.num + ' · SCOLAIR</span>';
+    $('.brand-s').innerHTML = home ? '<span class="fr">Maths · Seconde</span><span class="it">Matematica · Seconde</span>' : 'SCOLAIR · Seconde';
     owlChapter(ch ? ch.c : null);
     setAbh();
     if (pending){ var f = pending; pending = null; f(); }

@@ -13,14 +13,36 @@ Une application de révision pour **une seule élève** de Seconde, italophone, 
 
 Deux chapitres sont faits (manuel Bordas de Seconde) :
 
-- chapitre 10, « Information chiffrée » : évolutions successives, taux global, évolutions réciproques. 34 exercices du livre, 84 questions ;
-- chapitre 3, « Calcul littéral » : priorités, fractions, puissances, racines carrées, développer, factoriser, équations, inéquations. 76 exercices du livre, 84 questions. Les exercices se font sur le cahier, puis on compare avec la solution ; les QCM se font dans l'application.
+- chapitre 10, « Information chiffrée » : évolutions successives, taux global, évolutions réciproques. 34 exercices, 84 questions ;
+- chapitre 3, « Calcul littéral » : priorités, fractions, puissances, racines carrées, développer, factoriser, équations, inéquations. 76 exercices, 84 questions. Les exercices se font sur le cahier, puis on compare avec la solution ; les QCM se font dans l'application.
 
 L'écran d'accueil liste les chapitres dans l'ordre où ils ont été ajoutés, avec la progression de chacun.
 
 ## Ce qu'il ne faut pas ajouter
 
-Pas de comptes, pas de connexion, pas d'Espace prof, pas d'orientation, pas de devoirs rendus en ligne, pas de serveur. La progression reste sur son téléphone. L'application doit rester simple : cours, exercices du livre, entraînement, contrôle blanc.
+Pas de comptes, pas de connexion, pas d'Espace prof, pas d'orientation, pas de devoirs rendus en ligne, pas de serveur. La progression reste sur son téléphone. L'application doit rester simple : cours, exercices, entraînement, contrôle blanc.
+
+## L'application se suffit à elle-même
+
+L'élève travaille seule avec l'application, sans le manuel à côté. Le livre et le cahier servent à écrire le contenu, mais rien à l'écran n'y renvoie :
+
+- pas de numéro de page, pas de « du livre » ni « du manuel », pas de « Capacité 4 » ni de numéro d'exercice du livre ;
+- les exercices sont numérotés par l'application, dans l'ordre de la liste (1, 2, 3...) ;
+- pas de liste d'exercices « pour aller plus loin dans le manuel », pas de note annexe (histoire, logiciels) : seulement ce qui sert à réviser ;
+- dans les données, `num` et `page` gardent la trace de l'origine d'un exercice : ils ne sont pas affichés.
+
+## Présentation : ce qui doit rester vrai
+
+L'écran est étroit et l'élève lit lentement : la forme compte autant que le fond.
+
+- **Un calcul se pose ligne par ligne**, une étape par ligne, les signes « = » les uns sous les autres (bloc `.calc`, voir `outils/FORMAT-EXERCICES.md`). Pour une équation : une équation par ligne, le signe ⇔ au début de chaque nouvelle ligne.
+- **Une formule n'est jamais coupée en fin de ligne.** Courte, elle est insécable (`class="m nw"`) ; longue, elle est posée à part, en lignes alignées.
+- **Une question par ligne** : dans un énoncé, « 1. », « 2. », « a. », « b. » commencent chacun une ligne, le numéro en gras.
+- Une remarque sur un calcul se place sous l'étape qu'elle explique, en petit.
+- Les tableaux de règles (nom, règle, exemple) deviennent des fiches sur téléphone (`class="tb fx"`).
+- Aucun bloc à faire défiler de gauche à droite.
+
+`outils/teste.py` contrôle tout cela dans les trois modes de langue : signes « = » alignés, aucune formule coupée, aucune formule plus large que son bloc, aucun tableau ni calcul qui défile.
 
 ## Première mise en ligne (une seule fois)
 
@@ -34,13 +56,13 @@ Le dépôt public est `Abdellah427/Cours_italien_seconde`, branche `main`. Il re
 
 Je dicte le chapitre vu en cours et j'envoie les photos du livre (cours et exercices). Ensuite :
 
-1. Lire les photos. Recopier fidèlement les nombres et le sens des énoncés du livre ; ne rien inventer.
-2. Écrire le cours en français simple et en italien, dans le même style que `src/ch10/cours1.html` et `src/ch10/cours2.html` : phrases courtes, un exemple du livre par notion, les pièges classiques, une fiche résumé, un lexique français vers italien.
+1. Lire les photos. Recopier fidèlement les nombres et le sens des énoncés du livre ; ne rien inventer. À l'écran, rien ne renvoie au livre (voir « L'application se suffit à elle-même »).
+2. Écrire le cours en français simple et en italien, dans le même style que `src/ch10/cours1.html` et `src/ch10/cours2.html` : phrases courtes, un exemple par notion, les pièges classiques, une fiche résumé, un lexique français vers italien. Chaque calcul est posé ligne par ligne (voir « Présentation »).
 3. Écrire les exercices au format de `outils/FORMAT-EXERCICES.md` : indice, solution commentée pas à pas, erreurs classiques reconnues avec un message qui explique l'erreur. Vérifier chaque fichier avec `node outils/validate.js src/<chapitre>/<fichier>.js`.
 4. Ajouter des questions d'entraînement aléatoires et des questions de contrôle blanc pour le chapitre (dans `src/<chapitre>/chapitre.js`).
 5. Refaire tous les calculs de manière indépendante avant de publier : réponses, solutions, indices, dans les deux langues.
 6. `python3 outils/assemble.py`, puis `python3 outils/teste.py`. **Si un test échoue, on ne publie pas.** Quand on ajoute un type de question, on ajoute aussi son recalcul dans `teste.py`.
-7. Regarder le résultat à 390 px de large, dans les trois modes de langue (FR, FR·IT, IT).
+7. Regarder le résultat à 390 px de large, dans les trois modes de langue (FR, FR·IT, IT) : retours à la ligne, alignement des calculs, rien de trop dense.
 8. Commit, push. GitHub Pages met de 1 à 10 minutes à servir la nouvelle version. Vérifier le lien, puis me dire que c'est en ligne.
 
 ### Ajouter un chapitre
@@ -67,5 +89,5 @@ Dès qu'une version est poussée, elle arrive sur son téléphone à la prochain
 - Le nom affiché est **SCOLAIR** ; la mascotte s'appelle **Hector**. Couleurs, polices (Fredoka, Atkinson Hyperlegible), boutons et Hector viennent de l'application Maths Terminale SCOLAIR : ne pas changer l'identité visuelle. Les formules sont écrites avec la police STIX Two Text, comme dans un manuel.
 - Mobile d'abord (390 px, iPhone), mode clair seulement, aucun débordement horizontal.
 - Italien : on s'adresse à une fille (« Brava »), on dit « tasso reciproco », « variazione », « coefficiente moltiplicativo », « sviluppare », « scomporre in fattori », « prodotti notevoli », « disequazione » ; les pourcentages s'écrivent « 20% » en italien et « 20 % » en français.
-- Les énoncés du livre restent fidèles au livre. Si un nombre est illisible sur une photo, me le demander.
+- Les énoncés repris du livre lui restent fidèles (nombres, sens), sans le citer. Si un nombre est illisible sur une photo, me le demander.
 - Avant toute action difficile à défaire (créer un dépôt, le rendre public, supprimer, réécrire l'historique), me demander d'abord.

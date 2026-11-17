@@ -111,7 +111,7 @@
     return { r: 'ko', msg: okv.some(Boolean) ? MSG.fpart : MSG.no, okv: okv };
   }
 
-  /* Une question (exercice du livre ou entraînement). Types : num (un nombre), fill (cases), choice (boutons), self (sur le cahier, puis on compare). */
+  /* Une question (exercice ou entraînement). Types : num (un nombre), fill (cases), choice (boutons), self (sur le cahier, puis on compare). */
   function mountPart(box, p, num_, o){
     o = o || {};
     var solved = !!o.solved, self = p.kind === 'self';

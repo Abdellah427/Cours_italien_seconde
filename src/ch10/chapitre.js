@@ -236,7 +236,7 @@
     function(){
       return qcm('Deux évolutions sont réciproques lorsque :', 'Due variazioni sono reciproche quando:',
         [{ fr: 'leur coefficient multiplicateur global est égal à 1', it: 'il loro coefficiente moltiplicativo globale è uguale a 1' }, { fr: 'leurs taux sont opposés', it: 'i loro tassi sono opposti' }, { fr: 'elles ont lieu l’une après l’autre', it: 'avvengono una dopo l’altra' }, { fr: 'la somme de leurs taux est égale à 0', it: 'la somma dei loro tassi è uguale a 0' }],
-        { fr: 'C’est la définition du livre : coefficient global égal à 1. Par exemple +25 % et −20 % : 1,25 × 0,8 = 1.', it: 'È la definizione del libro: coefficiente globale uguale a 1. Per esempio +25% e −20%: 1,25 × 0,8 = 1.' });
+        { fr: 'C’est la définition : coefficient global égal à 1. Par exemple +25 % et −20 % : 1,25 × 0,8 = 1.', it: 'È la definizione: coefficiente globale uguale a 1. Per esempio +25% e −20%: 1,25 × 0,8 = 1.' });
     },
     function(){
       var vi = pick([40, 50, 80, 120, 200, 250]), t = pick([-30, -20, -15, -10, 10, 15, 20, 25, 40]), vf = rd(vi * (1 + t / 100), 2);
@@ -255,7 +255,7 @@
   ];
 
   CHAPS.push({
-    id: 'c10', num: 10, root: true,
+    id: 'c10', num: 10, root: true, sym: '%',
     title: { fr: 'Information chiffrée', it: 'Informazione numerica' },
     short: { fr: 'Évolutions %', it: 'Variazioni %' },
     sub: { fr: 'Évolutions successives, taux global, évolutions réciproques', it: 'Variazioni successive, tasso globale, variazioni reciproche' },
@@ -268,8 +268,8 @@
     order: ['ex146', 'ex147', 'ex148', 'cap4', 'ex115', 'ex116', 'ex117', 'ex118', 'ex119', 'ex120', 'ex121', 'ex122', 'ex123', 'ex124', 'ex125', 'ex126', 'ex151', 'ex152',
       'cap5', 'ex150', 'ex127', 'ex128', 'ex129', 'ex130', 'ex131', 'ex132', 'ex133', 'ex134', 'ex154', 'ex135', 'ex137', 'ex140', 'ex153', 'ex158'],
     exLead: {
-      fr: 'Les énoncés du manuel, traduits. Écris ta réponse, puis touche « Vérifier ». Si tu bloques : l’indice, puis la solution commentée.',
-      it: 'I testi del libro, tradotti. Scrivi la risposta e tocca «Vérifier». Se ti blocchi: l’indizio, poi la soluzione spiegata.'
+      fr: 'Écris ta réponse, puis touche « Vérifier ». Si tu bloques : l’indice, puis la solution commentée.',
+      it: 'Scrivi la risposta e tocca «Vérifier». Se ti blocchi: l’indizio, poi la soluzione spiegata.'
     },
     modes: [
       { k: 'cm', fr: 'Coefficients', it: 'Coefficienti' },

@@ -309,7 +309,68 @@ def qcm_c3(pg, q, fr):
         return ('test', lambda o: ev(o) == v)
     return None
 
-compte = {'lignes': 0, 'explications': 0}
+compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0}
+
+def rangees(pg, calc):
+    """Les rangées d'un calcul posé (bloc .calc) : ('eq', membre de gauche, « = suite ») ou ('expr', expression seule)."""
+    out = []; g = ''
+    for el in calc.query_selector_all(':scope > span'):
+        c = (el.get_attribute('class') or '').split()
+        if 'cg' in c: g = lin(pg, el)
+        elif 'cd' in c: out.append(('eq', g, lin(pg, el))); g = ''
+        elif 'ce' in c: out.append(('expr', lin(pg, el)))
+    return out
+def suites(rows):
+    """Regroupe les rangées en suites d'égalités : une rangée sans membre de gauche, ou qui commence par =, continue la précédente."""
+    out = []
+    for r in rows:
+        if r[0] == 'expr':
+            if out and r[1][:1] in ('=', '≈'): out[-1] += ' ' + r[1]        # « = suite » sur toute la largeur, sous une expression seule
+            else: out.append(r[1])
+        elif r[1] or not out: out.append((r[1] + ' ' + r[2]).strip())
+        else: out[-1] += ' ' + r[2]
+    return out
+
+# Mise en page d'un calcul posé : les signes « = » les uns sous les autres, rien qui oblige à faire défiler le bloc.
+POSE = r"""(root) => { const out = [];
+  root.querySelectorAll('.calc').forEach(c => { if (!c.offsetParent) return;
+    const xs = [...c.querySelectorAll(':scope > .cd')].map(n => Math.round(n.getBoundingClientRect().left * 2) / 2);
+    const txt = c.textContent.trim().replace(/\s+/g, ' ').slice(0, 50);
+    if (new Set(xs).size > 1) out.push('signes = non alignés : ' + txt);
+    if (c.scrollWidth > c.clientWidth + 1) out.push('calcul trop large (' + (c.scrollWidth - c.clientWidth) + ' px) : ' + txt);
+    if (c.querySelector(':scope > p:not(.ct), :scope > div:not(.ct)')) out.push('ancien format de calcul : ' + txt);
+    // une étape tient sur une ligne : aucun morceau de la case ne recommence plus à gauche que le précédent
+    c.querySelectorAll(':scope > .cg, :scope > .cd, :scope > .ce').forEach(cell => { const b = [];
+      cell.childNodes.forEach(n => { if (n.nodeType === 3) { const r = document.createRange(); r.selectNodeContents(n); b.push(...[...r.getClientRects()].filter(x => x.width > 0)); } else if (n.nodeType === 1) { const r = n.getBoundingClientRect(); if (r.width > 0) b.push(r); } });
+      if (b.some((r, i) => i && r.left < b[i - 1].left - 1)) out.push('étape de calcul coupée en deux lignes : ' + cell.textContent.trim().replace(/\s+/g, ' ').slice(0, 60)); });
+  });
+  return [root.querySelectorAll('.calc').length, out]; }"""
+# Les formules du texte : jamais coupées en fin de ligne (hors des tableaux ordinaires, aux colonnes étroites), jamais plus larges
+# que le bloc qui les contient ; aucun tableau ni calcul qu'il faudrait faire défiler.
+FORMULES = r"""(root) => { const out = [];
+  const txt = (n) => n.textContent.trim().replace(/\s+/g, ' ').slice(0, 60);
+  root.querySelectorAll('span.m').forEach(m => {
+    if (!m.offsetParent || m.closest('.calc') || m.parentElement.closest('.m')) return;
+    const t = m.closest('table');
+    if (!(t && !t.classList.contains('fx') && !t.classList.contains('err'))) {
+      // coupée : un morceau (ou un fragment de la formule) recommence plus à gauche que le précédent, donc sur une nouvelle ligne
+      const mc = [...m.querySelectorAll(':scope > .mc')];
+      const rs = (mc.length ? mc.map(c => c.getBoundingClientRect()) : [...m.getClientRects()]).filter(r => r.width > 0);
+      if (rs.some((r, i) => i && r.left < rs[i - 1].left - 1)) out.push('formule coupée en fin de ligne : ' + txt(m));
+    }
+    const b = m.closest('p, li, td, th, div, figcaption, button');
+    if (b) { const r = m.getBoundingClientRect(), rb = b.getBoundingClientRect(), cs = getComputedStyle(b);
+      if (r.right > rb.right - parseFloat(cs.paddingRight) + 6) out.push('formule plus large que son bloc (' + Math.round(r.right - rb.right + parseFloat(cs.paddingRight)) + ' px) : ' + txt(m)); }
+  });
+  root.querySelectorAll('.tw, .md').forEach(n => { if (n.offsetParent && n.scrollWidth > n.clientWidth + 1) out.push('bloc à faire défiler (' + (n.scrollWidth - n.clientWidth) + ' px) : ' + txt(n)); });
+  return [root.querySelectorAll('span.m').length, out]; }"""
+def verifie_pose(pg, sel, ou):
+    el = pg.query_selector(sel)
+    n, pb = pg.evaluate(POSE, el)
+    compte['calculs'] += n
+    nf, pf = pg.evaluate(FORMULES, el)
+    compte['formules'] += nf
+    for x in pb + pf: fails.append('%s : %s' % (ou, x))
 
 def verifie_solution(pg, card, exp):
     """Relit la solution affichée d'une question d'entraînement du chapitre 3 : chaque ligne de calcul doit être une suite
@@ -321,28 +382,37 @@ def verifie_solution(pg, card, exp):
     phrase = lin(pg, card.query_selector('.qtext p.fr'))
     mq = lin(pg, card.query_selector('.qtext .mq'))
     sb.click()
-    lignes = [lin(pg, p) for p in card.query_selector_all('.panel.sol .calc p')]
-    if not lignes: return ['solution sans ligne de calcul']
-    compte['lignes'] += len(lignes)
+    rows = []
+    for c in card.query_selector_all('.panel.sol .calc'): rows += rangees(pg, c)
+    if not rows: return ['solution sans ligne de calcul']
+    compte['lignes'] += len(rows)
+    for x in pg.evaluate(POSE, card.query_selector('.panel.sol'))[1]: pb.append(x)
     pts = (0, 1, 2, -3)
     def egal(a, b): return meme(a, b)
-    for s in lignes:
+    if typ == 'Équations':
+        # une équation par rangée : chacune doit avoir exactement les solutions attendues, et la première est l'énoncé
+        if exp[0] == 'nombre': racines = [Fraction(exp[1])]
+        elif 'fraction irréductible' in phrase: racines = [Fraction(exp[1][0], exp[1][1])]
+        else: racines = [Fraction(r) for r in exp[1]]
+        def sat(e, r):
+            g, d = e.split(' = ')
+            return egal(ev(g, r), ev(d, r))
+        etapes = [(r[1] + ' ' + r[2]).strip() if r[0] == 'eq' else r[1] for r in rows]
+        if clean(etapes[0]) != clean(mq): pb.append('la solution ne part pas de l’énoncé : « %s » au lieu de « %s »' % (etapes[0], mq))
+        if len(etapes) < 2: pb.append('solution en une seule ligne : ' + etapes[0])
+        for seg in etapes:
+            try:
+                subs = seg.split(' ou ')
+                if not (all(any(sat(e, r) for e in subs) for r in racines) and all(any(sat(e, r) for r in racines) for e in subs)):
+                    pb.append('étape « %s » : pas les mêmes solutions que %s' % (seg, [str(r) for r in racines]))
+                # une étape ne doit pas avoir d'autre solution : on essaie quelques autres nombres
+                for autre in (Fraction(17, 7), Fraction(-23, 5)):
+                    if autre not in racines and any(sat(e, autre) for e in subs): pb.append('étape « %s » vraie pour n’importe quel nombre' % seg)
+            except Exception as ex:
+                pb.append('étape illisible : %s (%s)' % (seg, ex))
+        return pb
+    for s in suites(rows):
         try:
-            if '⇔' in s:
-                if exp[0] == 'nombre': racines = [Fraction(exp[1])]
-                elif 'fraction irréductible' in phrase: racines = [Fraction(exp[1][0], exp[1][1])]
-                else: racines = [Fraction(r) for r in exp[1]]
-                def sat(e, r):
-                    g, d = e.split(' = ')
-                    return egal(ev(g, r), ev(d, r))
-                for seg in s.split(' ⇔ '):
-                    subs = seg.split(' ou ')
-                    if not (all(any(sat(e, r) for e in subs) for r in racines) and all(any(sat(e, r) for r in racines) for e in subs)):
-                        pb.append('étape « %s » : pas les mêmes solutions que %s' % (seg, [str(r) for r in racines]))
-                    # une étape ne doit pas avoir d'autre solution : on essaie quelques autres nombres
-                    for autre in (Fraction(17, 7), Fraction(-23, 5)):
-                        if autre not in racines and any(sat(e, autre) for e in subs): pb.append('étape « %s » vraie pour n’importe quel nombre' % seg)
-                continue
             parts = s.split(' = ')
             if len(parts) < 2: pb.append('ligne sans égalité : ' + s); continue
             if 'x' in s:
@@ -353,6 +423,12 @@ def verifie_solution(pg, card, exp):
                 vals = [ev(p) for p in parts]
                 if any(not egal(v, vals[0]) for v in vals): pb.append('égalités fausses : ' + s)
                 if exp[0] == 'nombre' and not egal(vals[-1], exp[1]): pb.append('la solution ne finit pas sur la réponse : ' + s)
+                # la suite d'égalités doit avoir la valeur de l'expression de l'énoncé (pour la valeur de x donnée, s'il y en a une)
+                xv = re.search(r'x = (-?\d+)', phrase)
+                try: ref = ev(mq, int(xv[1])) if xv else ev(mq)
+                except Exception: ref = None
+                if ref is None: pb.append('énoncé illisible pour relire la solution : ' + mq)
+                elif not egal(vals[0], ref): pb.append('la solution ne part pas de l’énoncé : ' + s)
         except Exception as ex:
             pb.append('ligne de solution illisible : %s (%s)' % (s, ex))
     return pb
@@ -368,6 +444,20 @@ def verifie_explications(pg, zone):
             compte['explications'] += 1
             if any(not meme(v, vals[0]) for v in vals): pb.append('égalités fausses dans une explication : ' + s)
         except Exception: pass
+    # les calculs posés d'une explication : chaque suite d'égalités doit être vraie (avec x : en quatre valeurs de x)
+    for c in zone.query_selector_all('.calc'):
+        for s in suites(rangees(pg, c)):
+            parts = s.split(' = ')
+            if len(parts) < 2: pb.append('calcul posé sans égalité dans une explication : ' + s); continue
+            try:
+                if 'x' in s:
+                    vals = [[ev(q, v) for v in (0, 1, 2, -3)] for q in parts]
+                    if any(v != vals[0] for v in vals): pb.append('égalités fausses dans une explication : ' + s)
+                else:
+                    vals = [ev(q) for q in parts]
+                    if any(not meme(v, vals[0]) for v in vals): pb.append('égalités fausses dans une explication : ' + s)
+                compte['explications'] += 1
+            except Exception as ex: pb.append('calcul d’explication illisible : %s (%s)' % (s, ex))
     return pb
 
 # Par chapitre : recalcul de l'entraînement, recalcul du contrôle, thèmes de l'entraînement
@@ -457,6 +547,8 @@ with sync_playwright() as p:
             chk('done' in (art.get_attribute('class') or ''), e['id'] + ' pas marqué réussi')
             ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
             chk(ov <= 0, 'débordement exercice %s : %s' % (e['id'], ov))
+            pg.evaluate("(a) => a.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false)", art)
+            verifie_pose(pg, '#x-' + e['id'], 'exercice ' + e['id'])
             art.query_selector('.exo-h').click()
         chk(pg.inner_text(V + ' .ex-count') == '%d / %d' % (len(exos), len(exos)), ch + ' compteur : ' + pg.inner_text(V + ' .ex-count'))
         pg.reload(); pg.wait_for_timeout(300)
@@ -498,6 +590,8 @@ with sync_playwright() as p:
                 else: fails.append('%s entraînement refusé : %s | %s | %s' % (ch, fr[:90], exp[1], norm(fb)[:60]))
                 ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
                 chk(ov <= 0, '%s débordement entraînement : %s' % (ch, fr[:60]))
+                pg.evaluate("(c) => c.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false)", card)
+                verifie_pose(pg, T + ' .tr-card', '%s entraînement « %s »' % (ch, fr[:50].replace('\n', ' ')))
                 pg.click(T + ' .tr-next')
         info.append('%s entraînement juste : %d / %d' % (ch, n_ok, n_tr))
         # 3. Contrôle blanc : 15 sujets, bonne réponse recalculée
@@ -532,6 +626,7 @@ with sync_playwright() as p:
                     chk(norm(exp) == got.split(' · ')[0], '%s contrôle : %s | attendu %s | marqué %s' % (ch, norm(fr)[:70], exp, got))
             ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
             chk(ov <= 0, '%s débordement contrôle corrigé' % ch)
+            verifie_pose(pg, C + ' .test-box', '%s contrôle corrigé' % ch)
             pg.click(C + ' .test-new'); pg.wait_for_timeout(50)
         info.append('%s questions de contrôle vérifiées : %d' % (ch, n_q))
     # 4. Navigation : accueil, carte du chapitre, onglets, anciennes adresses
@@ -570,8 +665,19 @@ with sync_playwright() as p:
                     l.querySelectorAll('*').forEach(n => { const r = n.getBoundingClientRect(); if (r.width && r.right > W + 1) { let p = n.parentElement, sc = false; while (p && p !== l) { const s = getComputedStyle(p); if (/auto|scroll/.test(s.overflowX)) { sc = true; break; } p = p.parentElement; } if (!sc) out.push(n.tagName + '.' + n.className + ' ' + Math.round(r.right)); } });
                     return out.slice(0, 3); }""", go)
                 chk(not wide, 'élément qui dépasse à droite, %s %s %s : %s' % (l, ch, go, wide))
+                verifie_pose(pg, '#' + go, '%s %s %s' % (l, ch, go))
+            # tous les exercices ouverts, indices et solutions affichés, dans cette langue
+            pg.goto(URL + '#' + ch + '/exercices'); pg.wait_for_timeout(120)
+            pg.evaluate("""(ch) => { const v = document.getElementById('v-exercices-' + ch);
+                v.querySelectorAll('.exo-h').forEach(h => { if (h.getAttribute('aria-expanded') !== 'true') h.click(); });
+                v.querySelectorAll('.panel[hidden]').forEach(p => p.hidden = false); }""", ch)
+            pg.wait_for_timeout(250)
+            verifie_pose(pg, '#v-exercices-' + ch, '%s exercices %s' % (l, ch))
+            ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
+            chk(ov <= 0, 'débordement %s %s, exercices ouverts : %s' % (l, ch, ov))
     b.close()
 info.append('lignes de solution relues : %d, calculs d’explication relus : %d' % (compte['lignes'], compte['explications']))
+info.append('mise en forme contrôlée : %d calculs posés, %d formules' % (compte['calculs'], compte['formules']))
 print('\n'.join(info))
 print('erreurs JS:', errs)
 print('ÉCHECS:', len(fails))

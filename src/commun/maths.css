@@ -13,19 +13,50 @@ b .m,.m b{font-weight:600}
 .sqrt{white-space:nowrap}
 .sqrt::before{content:"√";padding-right:.02em}
 .sqrt .rad{border-top:1.2px solid currentColor;padding:0 .1em}
+/* racine d'une fraction : le radical prend toute la hauteur de la fraction */
+.sqrt.gr{display:inline-flex;align-items:stretch;vertical-align:middle;margin:0 .08em}
+.sqrt.gr::before{font-size:1.9em;line-height:1;align-self:center;padding-right:0;margin-right:-.05em;transform:scaleX(.8);transform-origin:right center}
+.sqrt.gr > .rad{display:inline-flex;align-items:center;padding:.14em .05em .04em}
+.sqrt.gr > .rad > .frac{margin:0 .05em}
+/* les flèches d'équivalence ne sont pas dans la police des formules : une police du téléphone qui les dessine bien */
+.ar,.calc > .cl.eqv{font-family:"STIX Two Math","Apple Symbols","Cambria Math","Segoe UI Symbol","Noto Sans Math","DejaVu Sans",var(--f-math);font-weight:400;font-style:normal}
 .bp{font-size:1.7em;line-height:0;vertical-align:-.14em;font-weight:400}
 .m sup,.m sub,.md sup,.md sub{font-size:.72em}
 .k1{color:var(--k1);font-weight:600}.k2{color:var(--k2);font-weight:600}.k3{color:var(--k3);font-weight:600}
 .m s{text-decoration-color:var(--down);text-decoration-thickness:2px}
 .wrong{color:var(--down)}.right{color:var(--up)}.tick{color:var(--up);font-weight:700}
 
-/* Calculs pas à pas : une ligne par étape, la raison en petit à droite */
-.calc{margin:.6em 0;display:grid;gap:.25em;overflow-x:auto;padding-block:.2em;-webkit-overflow-scrolling:touch}
-.calc > p{margin:0}
-.calc .why,.why{display:inline-block;margin-left:.9em;font-size:.84em;color:var(--muted);font-family:var(--f-body)}
-.calc .lbl{font-weight:700;margin-top:.5em}
-.calc .res{font-weight:700}
-.calc .res .m{font-weight:600}
+/* Calculs posés : une étape par ligne, les signes « = » alignés.
+   Grille de trois colonnes : .cl libellé (a., 1.) | .cg membre de gauche, aligné à droite | .cd « = membre de droite ».
+   .ce : expression seule (colonnes 2 et 3) ; .cn : remarque sous une étape ; .ct : ligne de texte sur toute la largeur. */
+.calc{display:grid;grid-template-columns:max-content max-content minmax(0,1fr);column-gap:.34em;row-gap:.42em;align-items:baseline;margin:.7em 0;padding-block:.15em;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.calc > .cl{font-family:var(--f-body);font-weight:700;font-size:.92em;color:var(--muted);padding-right:.2em;white-space:nowrap}
+.calc > .cl:empty{padding:0}
+/* équations équivalentes : le signe ⇔ au début de chaque nouvelle ligne */
+.calc > .cl.eqv{font-size:1.15em;line-height:1;color:var(--ink);padding-right:.15em}
+.ar{font-size:1.08em}
+/* un numéro de question au-dessus de son calcul, quand le calcul a besoin de toute la largeur */
+.calc > .cl.seul{grid-column:1 / -1;margin-top:.35em;padding:0}
+.calc > .cl.seul:first-child{margin-top:0}
+.calc > .cg{justify-self:end;text-align:right;white-space:nowrap}
+/* une étape trop longue pour l'écran passe à la ligne, en retrait sous le signe = */
+.calc > .cd{padding-left:1.05em;text-indent:-1.05em;min-width:0}
+.calc > .cd .frac,.calc > .cd .sqrt,.calc > .ce .frac{text-indent:0}
+.calc > .ce{min-width:0}
+.calc > .ce{grid-column:2 / -1}
+.calc > .cn{grid-column:3;font-family:var(--f-body);font-size:.82em;line-height:1.35;color:var(--muted);margin:-.2em 0 .15em}
+.calc > .ct{grid-column:1 / -1;margin:.1em 0}
+.calc > .ct.lbl{font-weight:700;margin-top:.4em}
+.calc > .res,.calc > .ct.res .m{font-weight:600}
+/* la conclusion d'un calcul, écrite dans les deux langues : l'italien passe à la ligne */
+html[data-lang="both"] .calc > p.ct > .it.inl:last-child{display:block;font-weight:400}
+html[data-lang="both"] .calc > p.ct > .it.inl:last-child::before{content:none}
+.calc + .calc{margin-top:.2em}
+/* calcul posé au milieu d'une phrase : il prend ses propres lignes, un peu en retrait */
+span.calc{margin:.35em 0 .5em;padding-left:.6em}
+li > span.calc:last-child,p > span.calc:last-child,span > span.calc:last-child{margin-bottom:.15em}
+td > .calc{margin:.2em 0}
+.why{display:inline-block;margin-left:.9em;font-size:.84em;color:var(--muted);font-family:var(--f-body)}
 
 /* Texte du cours */
 .small{font-size:.88rem;color:var(--muted)}
@@ -107,8 +138,7 @@ html[data-lang="both"] h3 .sub-it{font-size:.76em}
 
 /* Liste d'expressions (A = ..., B = ...) : une par bloc, côte à côte quand il y a la place */
 p.items{margin:0 0 8px}
-.item{display:inline-block;max-width:100%;margin:2px 1.4em 4px 0;vertical-align:top}
-.item:last-child{margin-right:0}
+.item{display:block;margin:2px 0 6px}
 html[data-lang="both"] .selfhow .it{display:block;font-weight:400;margin-top:2px}
 @media (max-width:480px){ .md{font-size:1.08em} }
 
@@ -126,7 +156,20 @@ html[data-lang="both"] .selfhow .it{display:block;font-weight:400;margin-top:2px
   .tb.err td:nth-child(2){color:var(--up-ink)}
   .tb.err td:nth-child(2)::before{content:"✓ ";font-weight:700;color:var(--up)}
   .tb.err td:nth-child(3){font-size:.92em;color:var(--muted)}
+  /* tableaux de règles (nom, règle, exemple) : une fiche par règle, les formules sur toute la largeur */
+  .tb.fx thead{display:none}
+  .tb.fx,.tb.fx tbody,.tb.fx tr,.tb.fx td{display:block}
+  .tb.fx{background:none}
+  .tb.fx tr{border:1.5px solid var(--line);border-radius:14px;margin:8px 0;padding:10px 12px 6px;background:var(--surface)}
+  .tb.fx td{border:0;padding:2px 0}
+  .tb.fx td:first-child{font-weight:700;color:var(--blue-ink)}
+  .tb.fx td:first-child .it{font-weight:400}
+  .tb.fx .fl{display:block;margin-top:6px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .tb.fx td .m{font-size:1.27em}
+  .tb.fx td.items .item{margin:4px 0 8px}
 }
+.tb.fx .fl{display:none}
+@media (max-width:520px){ .tb.fx .fl{display:block} }
 td.items .item{display:block;margin:2px 0 6px}
 
 /* Questions d'entraînement : la formule à part, plus grande ; exposant à compléter */

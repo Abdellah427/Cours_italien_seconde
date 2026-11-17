@@ -50,7 +50,7 @@
   }
   $$('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setLang(b.dataset.lang); }); });
 
-  /* Schémas en bulles, comme dans le manuel */
+  /* Schémas en bulles */
   var chainId = 0, chains = [];
   function markers(id){
     return ['ink', 'up', 'down'].map(function(t){
@@ -115,6 +115,8 @@
   function rnd(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
   function pick(a){ return a[rnd(0, a.length - 1)]; }
   function shuffle(a){ for (var i = a.length - 1; i > 0; i--){ var j = rnd(0, i), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  /* Question de contrôle blanc. opts : la première réponse est la bonne. exp : { fr, it } l'explication, et si besoin
+     exp.calc : un calcul posé (bloc .calc), écrit une seule fois et affiché sous les deux phrases. */
   function qcm(fr, it, opts, exp){ return { fr: fr, it: it, opts: opts, exp: exp }; }
 
   /* Chapitres : chacun s'enregistre dans son fichier chapitre.js. Le chapitre 10 garde ses données à la racine du stockage (première version publiée). */

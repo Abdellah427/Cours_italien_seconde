@@ -180,6 +180,15 @@ input[type=range]{width:100%;accent-color:var(--brand);height:36px}
 table.bt{border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
 .bt th,.bt td{border:1px solid #C9D1DE;padding:6px 9px;text-align:center;white-space:nowrap}
 .bt th{background:#EEF2F8;text-align:left}
+/* Sur téléphone, un tableau de données écrit en lignes (un titre, puis ses valeurs) se lit en colonnes : rien à faire défiler */
+@media (max-width:520px){
+  table.bt{display:block;width:100%}
+  table.bt tbody{display:flex;width:100%;padding:0 1px 1px 0}
+  table.bt tr{display:flex;flex-direction:column;flex:1 1 0;min-width:0}
+  table.bt th,table.bt td{display:flex;align-items:center;white-space:normal;height:2.5em;margin:0 -1px -1px 0;padding:4px 10px}
+  table.bt th{height:3.7em;line-height:1.25}
+  table.bt td{justify-content:center}
+}
 pre.code{background:#111A33;color:#E8EDFF;border-radius:12px;padding:12px 14px;overflow-x:auto;font-size:.84rem;line-height:1.5;margin:8px 0}
 .sayv{margin:10px 0;padding:10px 12px;border-radius:12px;background:#F4F6FB;font-size:.9rem}
 .part{padding:14px 0 6px;border-top:1px dashed var(--line2)}

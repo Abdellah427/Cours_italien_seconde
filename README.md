@@ -1,6 +1,6 @@
 # SCOLAIR : maths de Seconde avec Hector
 
-Application de révision sur téléphone : cours en français et en italien, exercices du livre corrigés pas à pas, entraînement sans fin, contrôle blanc noté sur 20. Un écran d'accueil liste les chapitres et la progression de chacun. Installable sur l'écran d'accueil, fonctionne hors ligne.
+Application de révision sur téléphone : cours en français et en italien, exercices corrigés pas à pas, entraînement sans fin, contrôle blanc noté sur 20. Elle se suffit à elle-même : rien à l'écran ne renvoie à un manuel. Un écran d'accueil liste les chapitres et la progression de chacun. Installable sur l'écran d'accueil, fonctionne hors ligne.
 
 Chapitres :
 
@@ -25,14 +25,14 @@ Ouvrir `autonome/scolair-maths-seconde.html` dans un navigateur, ou servir `docs
 - `question.js` : une question et sa correction (un nombre, des cases à remplir, un choix, ou un exercice à faire sur le cahier).
 - `moteur.js` : pour chaque chapitre, la liste des exercices, l'entraînement, le contrôle blanc, le sommaire du cours ; l'écran d'accueil et la navigation.
 - `hector.js`, `owl_pre.js`, `chouette.js`, `chouette.css`, `owl.svg` : Hector.
-- `app.css`, `scolair.css`, `maths.css` : styles (`maths.css` : formules et composants des cours écrits avec des formules).
+- `app.css`, `scolair.css`, `maths.css` : styles (`maths.css` : formules, calculs posés ligne par ligne avec les signes « = » alignés, composants des cours écrits avec des formules).
 - `maj.js` : service worker et rechargement quand une version plus récente est en ligne.
 - `depart.js` : démarrage.
 
 `src/ch10/`, `src/ch03/` : un dossier par chapitre.
 
 - `cours1.html`... : le cours.
-- `ex*.js` : les exercices du livre (format : `outils/FORMAT-EXERCICES.md`).
+- `ex*.js` : les exercices (format : `outils/FORMAT-EXERCICES.md`).
 - `chapitre.js` : titre, groupes d'exercices, questions d'entraînement aléatoires, questions du contrôle blanc.
 
 Adresses dans l'application : `#accueil`, puis `#c10/cours`, `#c10/exercices`, `#c10/entrainement`, `#c10/controle` (de même avec `c3`).
