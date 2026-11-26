@@ -1,10 +1,12 @@
   // Hector, la chouette de SCOLAIR : il accompagne, félicite et encourage.
-  var HK = window.Hector || null, owlTop = null;
+  var HK = window.Hector || null, owlTop = null, owlDanseA = 0;
   function mkOwl(slot, opts){
     if (!HK || !slot) return null;
     try { var o = new HK.Owl(opts || {}); slot.appendChild(o.el); return o; } catch (e) { return null; }
   }
   function owlEvt(kind, n, slot){
+    /* un travail réussi peut faire gagner une tenue ou une danse : Hector l'annonce une fois son geste fini */
+    if (kind !== 'ko') jeuBientot(kind === 'exo' || Date.now() - owlDanseA < 400 ? 2900 : 1100);
     if (!HK) return;
     try {
       if (kind === 'note'){
@@ -14,9 +16,9 @@
         return;
       }
       if (!owlTop) return;
-      if (kind === 'ok') owlTop.anim('saut');
+      if (kind === 'ok'){ if (Date.now() - owlDanseA > 400) owlTop.anim('saut'); }      /* la dernière question d'un exercice : la danse d'abord */
       else if (kind === 'ko') owlTop.set('think', 1800);
-      else if (kind === 'exo') owlTop.anim('danse');
+      else if (kind === 'exo'){ owlDanseA = Date.now(); if (!jeuDanse(owlTop)) owlTop.anim('danse'); }
       else if (kind === 'serie'){
         owlTop.anim('fierte');
         owlTop.speak('<span class="fr">' + typo(n + ' de suite, bravo !', true) + '</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });

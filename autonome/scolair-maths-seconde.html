@@ -379,6 +379,49 @@ html[data-lang="both"] .chap-s .it{display:block;color:var(--owl-dark)}
 #v-accueil.choix .h-choix{display:inline}
 #v-accueil.choix .nivs{display:grid;gap:12px;margin-top:18px}
 #v-accueil.choix .nivs .chip{min-height:76px;font-size:1.35rem;border-radius:22px;box-shadow:var(--shadow)}
+/* ---------- Les tenues et les danses d'Hector ---------- */
+/* le bouton de l'accueil */
+#v-accueil.choix #home-jeu{display:none}
+.jeu-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border-radius:18px;padding:9px 12px 9px 10px;margin:10px 0 2px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);border:1.5px solid transparent;transition:transform .08s}
+.jeu-b:active{transform:translateY(2px);border-color:var(--blue-mid)}
+.jeu-bi{width:42px;height:42px;border-radius:13px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center}
+.jeu-bi svg{width:23px;height:23px}
+.jeu-bt{display:grid;gap:2px;min-width:0}
+.jeu-b1{font-family:var(--f-display);font-weight:600;font-size:1rem;line-height:1.2;color:var(--blue-ink)}
+.jeu-b2{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:.78rem;color:var(--muted);font-weight:700}
+.jeu-b2 b{color:var(--ink)}
+.jeu-neuf{background:var(--yellow);color:var(--ink);border-radius:999px;padding:2px 9px;font:600 .68rem/1.3 var(--f-display);letter-spacing:.05em;text-transform:uppercase}
+/* la vue : Hector et la récompense choisie, puis les tenues et les danses */
+#v-hector{margin-top:-8px}
+.jeu-h{display:flex;align-items:center;gap:10px;min-height:46px}
+.jeu-h h1{flex:1;min-width:0;font-size:1.3rem;font-weight:600;color:var(--blue-ink)}
+.jeu-c{font:600 .95rem/1 var(--f-display);color:var(--muted)}
+.jeu-c b{color:var(--ink)}
+.jeu-s{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:18px 14px 10px 12px;margin:4px 0 0;min-height:158px}
+.jeu-s .owl-slot{width:100px;margin:0 auto}
+.jeu-d p{margin:0 0 5px;font-size:.9rem;line-height:1.35}
+.jeu-d .jeu-k{font:600 .68rem/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--blue-deep);margin:0 0 2px}
+.jeu-n{font-size:1.18rem;font-weight:600;color:var(--blue-ink);margin:0 0 6px}
+html[data-lang="both"] .jeu-n .it{display:none}      /* la consigne est dans les deux langues : le nom, en français, suffit */
+html[data-lang="both"] .jeu-d p.it{margin-top:0;font-size:.86rem}
+.jeu-d .prog{margin:6px 0}
+.jeu-d .jeu-ou{color:var(--muted);font-weight:700;font-size:.8rem;margin:0}
+.jeu-a{margin:2px 0 6px}
+.jeu-gt{font:600 .7rem/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:8px 2px 5px}
+.jeu-g{display:grid;gap:8px}
+.jeu-g.t{grid-template-columns:repeat(3,minmax(0,1fr))}
+.jeu-g.d{grid-template-columns:repeat(4,minmax(0,1fr))}
+.jeu-t{display:grid;justify-items:center;align-content:center;gap:3px;min-width:0;min-height:76px;padding:6px 3px 5px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--f-display);-webkit-tap-highlight-color:transparent}
+.jeu-t[aria-pressed="true"]{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-mid)}
+.jeu-i{width:46px;height:30px;display:grid;place-items:center;color:var(--blue)}
+.jeu-i svg{display:block;width:46px;height:30px;overflow:visible}
+.jeu-t:not(.ok) .jeu-i{filter:grayscale(1);opacity:.4}
+.jeu-tn{font-weight:600;font-size:.74rem;line-height:1.15;color:var(--ink);text-align:center}
+.jeu-l{display:inline-flex;align-items:center;gap:3px;font:600 .68rem/1.3 var(--f-display);color:var(--muted)}
+.jeu-l svg{width:11px;height:11px}
+.jeu-e{font:600 .66rem/1.3 var(--f-display);color:var(--up-ink);border-radius:999px;padding:0 7px}
+.jeu-e.on{background:var(--good-soft)}
+.jeu-e.neuf{background:var(--yellow);color:var(--ink)}
 /* une classe écrite en français seulement : pas de choix de langue */
 html.mono .seg{display:none}
 .resume svg{flex:none}
@@ -764,6 +807,41 @@ a,button,input,label,summary,.chip,.tab,.choice{touch-action:manipulation}
 @keyframes owl-jongle-l { 50% { transform: rotate(34deg); } }
 @keyframes owl-jongle-r { 50% { transform: rotate(-34deg); } }
 
+/* ----- Tenues et danses à débloquer ----- */
+.owl.acc-bow .owl-acc-bow, .owl.acc-shades .owl-acc-shades, .owl.acc-crown .owl-acc-crown { display: inline; }
+.owl .owl-acc-crown { transform-origin: 410px 60px; }
+/* le crayon derrière l'oreille : un peu plus grand, pour qu'on le voie aussi sur le petit Hector de la barre du haut */
+.owl .owl-acc-pencil { transform-origin: 108px 78px; transform: translate(-46px, -52px) scale(1.45); }
+/* La toupie : deux tours sur soi-même, puis un petit saut */
+.owl.a-toupie .owl-all { transform-origin: 410px 480px; animation: owl-toupie 1.8s cubic-bezier(.45, 0, .3, 1); }
+@keyframes owl-toupie { 0% { transform: none; } 70% { transform: rotate(720deg); } 84% { transform: rotate(720deg) translateY(-80px); } 100% { transform: rotate(720deg); } }
+.owl.a-toupie .owl-wing-l { animation: owl-toupie-l 1.8s ease-in-out; }
+.owl.a-toupie .owl-wing-r { animation: owl-toupie-r 1.8s ease-in-out; }
+@keyframes owl-toupie-l { 8%, 66% { transform: rotate(58deg); } 84% { transform: rotate(40deg); } }
+@keyframes owl-toupie-r { 8%, 66% { transform: rotate(-58deg); } 84% { transform: rotate(-40deg); } }
+/* Le moonwalk : il glisse sur le côté, penché, une aile sur la tête, puis revient */
+.owl.a-moonwalk .owl-all { animation: owl-moonwalk 2.4s ease-in-out; }
+@keyframes owl-moonwalk { 0%, 100% { transform: none; } 8% { transform: rotate(-7deg); } 46% { transform: translateX(120px) rotate(-7deg); } 54% { transform: translateX(120px) rotate(7deg); } 92% { transform: rotate(7deg); } }
+.owl.a-moonwalk .owl-foot-l { animation: owl-glisse-l .6s ease-in-out 4; }
+.owl.a-moonwalk .owl-foot-r { animation: owl-glisse-r .6s ease-in-out 4; }
+@keyframes owl-glisse-l { 50% { transform: translate(-30px, -18px) rotate(-14deg); } }
+@keyframes owl-glisse-r { 0%, 50% { transform: none; } 75% { transform: translate(30px, -18px) rotate(14deg); } }
+.owl.a-moonwalk .owl-wing-r { animation: owl-moon-aile 2.4s ease-in-out; }
+@keyframes owl-moon-aile { 0%, 100% { transform: none; } 10%, 90% { transform: rotate(-118deg); } }
+.owl.a-moonwalk .owl-lid { animation: owl-moon-paup 2.4s ease-in-out; }
+@keyframes owl-moon-paup { 10%, 90% { transform: translateY(96px); } }
+/* Le disco : une aile pointée vers le ciel, puis l'autre */
+.owl.a-disco .owl-all { animation: owl-disco 2s ease-in-out; }
+@keyframes owl-disco { 0%, 25%, 50%, 75%, 100% { transform: none; } 12.5%, 62.5% { transform: translateY(-40px) rotate(7deg); } 37.5%, 87.5% { transform: translateY(-40px) rotate(-7deg); } }
+.owl.a-disco .owl-wing-l { animation: owl-disco-l 2s ease-in-out; }
+.owl.a-disco .owl-wing-r { animation: owl-disco-r 2s ease-in-out; }
+@keyframes owl-disco-l { 0%, 25%, 50%, 75%, 100% { transform: none; } 12.5%, 62.5% { transform: rotate(138deg); } 37.5%, 87.5% { transform: rotate(-10deg); } }
+@keyframes owl-disco-r { 0%, 25%, 50%, 75%, 100% { transform: none; } 37.5%, 87.5% { transform: rotate(-138deg); } 12.5%, 62.5% { transform: rotate(10deg); } }
+.owl.a-disco .owl-head, .owl.a-disco .owl-crane { animation: owl-disco-tete 2s ease-in-out; }
+@keyframes owl-disco-tete { 12.5%, 62.5% { transform: rotate(-6deg); } 37.5%, 87.5% { transform: rotate(6deg); } }
+.owl.a-disco .owl-oeil { display: none; }
+.owl.a-disco .owl-happy { display: inline; }
+
 /* Poses fixes quand les animations sont réduites */
 .owl.p-jokr .owl-acc-card, .owl.p-loupe .owl-acc-loupe { display: inline; }
 .owl.p-jokr .owl-eye-l .owl-oeil { display: none; }
@@ -1050,6 +1128,11 @@ td.items .item{display:block;margin:2px 0 6px}
         <path d="M560 500 L600 640 L540 628 L520 508 Z" fill="#F2C200"/>
         <path d="M232 474 L248 518 M300 488 L312 530 M372 494 L378 538 M444 494 L440 538 M516 488 L506 530 M584 474 L568 518" stroke="#E2B400" stroke-width="7" stroke-linecap="round"/>
       </g>
+      <g class="owl-acc owl-acc-bow">
+        <path d="M410 506 L290 448 C276 484 276 528 290 564 Z" fill="#E5484D" stroke="#B4232A" stroke-width="7" stroke-linejoin="round"/>
+        <path d="M410 506 L530 448 C544 484 544 528 530 564 Z" fill="#E5484D" stroke="#B4232A" stroke-width="7" stroke-linejoin="round"/>
+        <circle cx="410" cy="506" r="28" fill="#C2352B" stroke="#B4232A" stroke-width="7"/>
+      </g>
     </g>
     <g class="owl-feet" fill="#F2B33D" stroke="#DE9A22" stroke-width="5">
       <g class="owl-foot owl-foot-l"><ellipse cx="222" cy="832" rx="24" ry="46"/><ellipse cx="262" cy="840" rx="24" ry="48"/><ellipse cx="302" cy="832" rx="24" ry="46"/></g>
@@ -1099,6 +1182,12 @@ td.items .item{display:block;margin:2px 0 6px}
           <path class="owl-happy" display="none" d="M508 310 Q580 220 652 310" fill="none" stroke="#111" stroke-width="22" stroke-linecap="round"/>
           <path class="owl-closed" display="none" d="M508 292 Q580 340 652 292" fill="none" stroke="#111" stroke-width="18" stroke-linecap="round"/>
         </g>
+        <g class="owl-acc owl-acc-shades">
+          <circle cx="220" cy="290" r="160" fill="#23284F"/>
+          <circle cx="600" cy="290" r="160" fill="#23284F"/>
+          <path d="M112 236 C138 184 184 160 232 156" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" opacity=".5"/>
+          <path d="M492 236 C518 184 564 160 612 156" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" opacity=".5"/>
+        </g>
         <g class="owl-glasses">
           <circle cx="220" cy="290" r="166" fill="none" stroke="var(--owl-glasses, #333)" stroke-width="17"/>
           <circle cx="600" cy="290" r="166" fill="none" stroke="var(--owl-glasses, #333)" stroke-width="17"/>
@@ -1111,6 +1200,13 @@ td.items .item{display:block;margin:2px 0 6px}
         <path d="M290 56 L290 104 C350 132 470 132 530 104 L530 56 L410 86 Z" fill="#2F3566"/>
         <path d="M410 24 L600 50 L600 132" fill="none" stroke="#FFDA1B" stroke-width="7"/>
         <circle cx="600" cy="140" r="13" fill="#FFDA1B"/>
+      </g>
+      <g class="owl-acc owl-acc-crown">
+        <path d="M268 96 L240 -44 L328 26 L410 -78 L492 26 L580 -44 L552 96 Z" fill="#FFDA1B" stroke="#E2B400" stroke-width="9" stroke-linejoin="round"/>
+        <path d="M268 96 C340 120 480 120 552 96 L546 132 C480 156 340 156 274 132 Z" fill="#F2C200" stroke="#E2B400" stroke-width="7" stroke-linejoin="round"/>
+        <circle cx="410" cy="54" r="21" fill="#E5484D" stroke="#B4232A" stroke-width="5"/>
+        <circle cx="322" cy="74" r="13" fill="#4D61F4"/><circle cx="498" cy="74" r="13" fill="#4D61F4"/>
+        <circle cx="240" cy="-44" r="15" fill="#FFDA1B" stroke="#E2B400" stroke-width="7"/><circle cx="410" cy="-78" r="15" fill="#FFDA1B" stroke="#E2B400" stroke-width="7"/><circle cx="580" cy="-44" r="15" fill="#FFDA1B" stroke="#E2B400" stroke-width="7"/>
       </g>
     </g>
     <g class="owl-acc owl-acc-book" display="none">
@@ -1164,11 +1260,13 @@ td.items .item{display:block;margin:2px 0 6px}
     <p class="eyebrow ui" id="home-eyebrow">Maths</p>
     <h1 id="t-accueil"><span class="h-chap"><span class="fr">Mes chapitres</span><span class="it sub-it">I miei capitoli</span></span><span class="h-choix"><span class="fr">Tu es en quelle classe ?</span><span class="it sub-it">In che classe sei?</span></span></h1>
   </div>
+  <div id="home-jeu"></div>
   <div id="home-niv" class="nivs ui" role="group" aria-label="Classe"></div>
   <div id="home-resume"></div>
   <div id="home-list" class="hlist"></div>
   <p class="foot"><span class="fr">Ta progression reste enregistrée sur ton téléphone.</span><span class="it inl">I tuoi progressi restano salvati sul tuo telefono.</span></p>
 </section>
+<section id="v-hector" class="view" aria-labelledby="t-hector" hidden></section>
 
 <section id="v-cours-c10" class="view" data-ch="c10" aria-labelledby="t-cours-c10" hidden>
   <div class="vhead">
@@ -9393,7 +9491,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const inline = (s) => s;
-const S = { xp: 0, owl: {} };
+// Les tenues : les accessoires du dessin qu'Hector peut porter. Lesquels sont portés se règle avec Hector.tenue([...]).
+const ACCS = ["pencil", "scarf", "cap", "bow", "shades", "crown"].map((k) => ({ k, lvl: 1 }));
+const levelOf = () => 1;
+const S = { xp: 0, owl: { acc: {} } };
+ACCS.forEach((a) => { S.owl.acc[a.k] = false; });
 const ASSO = { nom: "SCOLAIR", chouette: "Hector" };
 const coach = { react() {} };
 let HECTOR_DIT = [
@@ -9427,6 +9529,7 @@ const OWL_ANIMS = {
   reveil: { ms: 1400, p: "caty" }, rire: { ms: 900, p: "cay" }, tourne: { ms: 900, p: "c" }, ebouriffe: { ms: 650, p: "ct" },
   lunettes: { ms: 1400, p: "y" }, regard: { ms: 1800, p: "ty" }, aigrette: { ms: 500, p: "t" }, parle: { ms: 450, p: "t" },
   loupe: { ms: 2300, p: "ayx" }, jongle: { ms: 1600, p: "ay" },
+  toupie: { ms: 1800, p: "ca" }, moonwalk: { ms: 2400, p: "caty" }, disco: { ms: 2000, p: "caty" },      // danses à débloquer
   reflechir: { ms: 1800, etat: "think" }, lire: { ms: 3400, etat: "read" }, dormir: { ms: 0, etat: "sleep" },
 };
 const OWL_ANIM_ALIAS = {
@@ -9436,7 +9539,7 @@ const OWL_ANIM_ALIAS = {
   search: "loupe", chercher: "loupe", juggle: "jongle", think: "reflechir", read: "lire", sleep: "dormir", endormi: "dormir",
 };
 // En mode calme, certains gestes deviennent une pose fixe ; les autres ne font rien.
-const OWL_POSES = { danse: "happy", fierte: "proud", toque: "happy", rire: "happy", saut: "happy", surprise: "surprise", reveil: null };
+const OWL_POSES = { danse: "happy", fierte: "proud", toque: "happy", rire: "happy", saut: "happy", surprise: "surprise", reveil: null, toupie: "happy", moonwalk: "happy", disco: "happy" };
 // Effets qui accompagnent certains gestes (étincelles, symboles, ! et ?).
 const OWL_EFFETS = {
   toque: (o) => setTimeout(() => o.eclats(6), 1450),
@@ -9446,6 +9549,8 @@ const OWL_EFFETS = {
   surprise: (o) => o.marque("!"),
   reveil: (o) => o.marque("!"),
   jongle: (o) => o.symboles(),
+  disco: (o) => { o.eclats(3); setTimeout(() => o.eclats(3), 1000); },
+  toupie: (o) => setTimeout(() => o.eclats(3), 1300),
 };
 let owlUid = 0;
 
@@ -9895,7 +10000,9 @@ function confetti() {
   setTimeout(() => box.remove(), 3800);
 }
 
-window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a.length) HECTOR_DIT = a; } };
+window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a.length) HECTOR_DIT = a; },
+  /* les accessoires portés par tous les Hector de la page */
+  tenue: function(l){ ACCS.forEach(function(a){ S.owl.acc[a.k] = !!l && l.indexOf(a.k) >= 0; }); OWLS.forEach(function(o){ o.dress(); }); } };
 })();
 </script>
 <script>
@@ -12684,7 +12791,8 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
         if (v === 'controle'){ if (!testQs && c.tq.length) newTest(); else retest(); }
         if (v === 'cours') showPart(st.part || lessons[0].id);
       },
-      stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest }; },
+      /* q : questions réussies dans les exercices ; tr : bonnes réponses à l'entraînement (pour les récompenses d'Hector) */
+      stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest, q: EX.reduce(function(n, e){ return n + nDone(e); }, 0), tr: st.tr.total }; },
       reveal: reveal,
       /* Ouvre un exercice dans la liste et renvoie sa carte */
       openExo: function(id){
@@ -12736,6 +12844,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       var c = CH[l.ch].c;
       r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + FR(c.short) + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + IT(c.short) + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
     } else r.innerHTML = '';
+    $('#home-jeu').innerHTML = n ? jeuBouton() : '';      /* les tenues et les danses d'Hector */
   }
   /* Changer de classe sur l'accueil */
   document.addEventListener('click', function(ev){
@@ -12746,7 +12855,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
   });
 
   var cur = { ch: null, v: 'accueil' }, scrolls = {}, pending = null, started = false;
-  function keyOf(r){ return r.ch ? r.ch + '/' + r.v : 'accueil'; }
+  function keyOf(r){ return r.ch ? r.ch + '/' + r.v : r.v; }
   function parseHash(){
     var h = (location.hash || '').replace(/^#\/?/, '');
     if (VIEWS.indexOf(h) >= 0 && CH.c10) return { ch: 'c10', v: h };
@@ -12754,6 +12863,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     if (m && CH[m[1]] && VIEWS.indexOf(m[2]) >= 0) return { ch: m[1], v: m[2] };
     /* #3e, #2de : l'accueil d'une classe (le lien à donner à une élève) */
     if (NIVEAUX.some(function(x){ return x.k === h; })) return { ch: null, v: 'accueil', niv: h };
+    if (h === 'hector' && niv()) return { ch: null, v: 'hector' };      /* les tenues et les danses d'Hector */
     return { ch: null, v: 'accueil' };
   }
   function route(){
@@ -12765,7 +12875,8 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
     if (!home) setNiv(nivDe(ch.c)); else if (r.niv) setNiv(r.niv); else appliqueLangue();      /* la classe suit le chapitre affiché */
     document.body.classList.toggle('at-home', home);
     document.documentElement.classList.remove('plein');      /* remis par la vue des exercices quand un exercice y est ouvert */
-    if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
+    if (home && r.v === 'hector'){ document.getElementById('v-hector').hidden = false; ouvreJeu(); }
+    else if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
     else {
       ch.el[r.v].hidden = false;
       ch.enter(r.v);
@@ -12822,12 +12933,14 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
   window.addEventListener('resize', setAbh);
   window.addEventListener('hashchange', route);
   // Hector, la chouette de SCOLAIR : il accompagne, félicite et encourage.
-  var HK = window.Hector || null, owlTop = null;
+  var HK = window.Hector || null, owlTop = null, owlDanseA = 0;
   function mkOwl(slot, opts){
     if (!HK || !slot) return null;
     try { var o = new HK.Owl(opts || {}); slot.appendChild(o.el); return o; } catch (e) { return null; }
   }
   function owlEvt(kind, n, slot){
+    /* un travail réussi peut faire gagner une tenue ou une danse : Hector l'annonce une fois son geste fini */
+    if (kind !== 'ko') jeuBientot(kind === 'exo' || Date.now() - owlDanseA < 400 ? 2900 : 1100);
     if (!HK) return;
     try {
       if (kind === 'note'){
@@ -12837,9 +12950,9 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
         return;
       }
       if (!owlTop) return;
-      if (kind === 'ok') owlTop.anim('saut');
+      if (kind === 'ok'){ if (Date.now() - owlDanseA > 400) owlTop.anim('saut'); }      /* la dernière question d'un exercice : la danse d'abord */
       else if (kind === 'ko') owlTop.set('think', 1800);
-      else if (kind === 'exo') owlTop.anim('danse');
+      else if (kind === 'exo'){ owlDanseA = Date.now(); if (!jeuDanse(owlTop)) owlTop.anim('danse'); }
       else if (kind === 'serie'){
         owlTop.anim('fierte');
         owlTop.speak('<span class="fr">' + typo(n + ' de suite, bravo !', true) + '</span><span class="it">' + n + ' di fila, brava!</span>', { muet: true });
@@ -12872,6 +12985,198 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
       if (o) setTimeout(function(){ try { o.anim('salut'); } catch (e) {} }, 500);
     }
   })();
+  /* ---------- Les tenues et les danses d'Hector : des récompenses que l'on gagne en travaillant ----------
+     Une récompense se gagne une fois pour toutes. but : [mesure, seuil], tous chapitres confondus :
+       q : questions réussies dans les exercices        s : meilleure série à l'entraînement
+       e : bonnes réponses à l'entraînement             n : meilleure note à un contrôle blanc
+     acc : l'accessoire du dessin (une tenue) ; gr : deux tenues du même groupe ne se portent pas ensemble ; pas : les gestes d'une danse. */
+  var REC = [
+    { k: 'crayon', acc: 'pencil', vb: '84 50 216 156', fr: 'Le crayon', it: 'La matita', c: ['Crayon', 'Matita'], but: ['q', 5] },
+    { k: 'echarpe', acc: 'scarf', gr: 'cou', vb: '170 438 480 212', fr: 'L’écharpe', it: 'La sciarpa', c: ['Écharpe', 'Sciarpa'], but: ['q', 15] },
+    { k: 'noeud', acc: 'bow', gr: 'cou', vb: '262 434 296 144', fr: 'Le nœud papillon', it: 'Il papillon', c: ['Nœud papillon', 'Papillon'], but: ['q', 30] },
+    { k: 'lunettes', acc: 'shades', vb: '50 120 720 340', fr: 'Les lunettes de soleil', it: 'Gli occhiali da sole', c: ['Lunettes', 'Occhiali'], but: ['s', 5] },
+    { k: 'toque', acc: 'cap', gr: 'tete', vb: '170 -48 480 210', fr: 'La toque', it: 'Il tocco', c: ['Toque', 'Tocco'], but: ['n', 10] },
+    { k: 'couronne', acc: 'crown', gr: 'tete', vb: '216 -104 388 274', fr: 'La couronne', it: 'La corona', c: ['Couronne', 'Corona'], but: ['n', 16] },
+    { k: 'toupie', pas: ['toupie'], fr: 'La toupie', it: 'La trottola', c: ['Toupie', 'Trottola'], but: ['s', 3],
+      ic: '<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20.5 3.5v5h-5"/>' },
+    { k: 'jongleur', pas: ['jongle', 'jongle'], fr: 'Le jongleur', it: 'Il giocoliere', c: ['Jongleur', 'Giocoliere'], but: ['e', 10],
+      ic: '<circle cx="5.5" cy="10" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="18.5" cy="10" r="2.2"/><path d="M5 18c2.5 2.4 11.5 2.4 14 0"/>' },
+    { k: 'disco', pas: ['disco'], fr: 'Le disco', it: 'La disco', c: ['Disco', 'Disco'], but: ['q', 50],
+      ic: '<path d="M12 2.500v3.5"/><circle cx="12" cy="13.5" r="7.5"/><path d="M4.5 13.500h15M12 6v15M6.5 9c3.5 1.6 7.5 1.6 11 0M6.5 18c3.5-1.6 7.5-1.6 11 0"/>' },
+    { k: 'moonwalk', pas: ['moonwalk'], fr: 'Le moonwalk', it: 'Il moonwalk', c: ['Moonwalk', 'Moonwalk'], but: ['q', 80],
+      ic: '<path d="M20 14.500A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.500z"/>' }
+  ];
+  var RK = {};
+  REC.forEach(function(r){ RK[r.k] = r; });
+  /* Ce qu'il faut faire pour gagner une récompense, et où l'on en est */
+  var BUT = {
+    q: function(n){ return { fr: 'Réussis ' + n + ' questions dans les exercices.', it: 'Risolvi ' + n + ' domande negli esercizi.' }; },
+    s: function(n){ return { fr: 'Réussis ' + n + ' questions de suite à l’entraînement.', it: 'Rispondi bene a ' + n + ' domande di fila nell’allenamento.' }; },
+    e: function(n){ return { fr: 'Réussis ' + n + ' questions à l’entraînement.', it: 'Rispondi bene a ' + n + ' domande nell’allenamento.' }; },
+    n: function(n){ return { fr: 'Obtiens ' + n + ' / 20 ou plus à un contrôle blanc.', it: 'Prendi ' + n + ' / 20 o più in una verifica di prova.' }; }
+  };
+  function jeuOu(r, m){
+    var v = m[r.but[0]], t = r.but[1];
+    if (r.but[0] === 'n') return v == null ? { fr: 'Pas encore de contrôle blanc.', it: 'Ancora nessuna verifica di prova.' } : { fr: 'Ton meilleur score : ' + v + ' / 20.', it: 'Il tuo record: ' + v + ' / 20.' };
+    if (r.but[0] === 's') return { fr: 'Ta meilleure série : ' + v + '.', it: 'La tua serie migliore: ' + v + '.' };
+    return { fr: 'Tu en es à ' + v + ' sur ' + t + '.', it: 'Sei a ' + v + ' su ' + t + '.' };
+  }
+  var ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  var ICON_JEU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="1.5"/><path d="M3 7.500h18V11H3zM12 7.500V20M12 7.500C10.5 3.5 6 4 7.5 7.500M12 7.500c1.5-4 6-3.5 4.5 0"/></svg>';
+  /* L'image d'une récompense : l'accessoire tel qu'il est dans le dessin d'Hector, ou un pictogramme pour une danse */
+  function jeuImage(r){
+    if (!r.acc) return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + r.ic + '</svg>';
+    var tpl = document.getElementById('owl-tpl'), g = tpl && tpl.content ? tpl.content.querySelector('.owl-acc-' + r.acc) : null;
+    return '<svg viewBox="' + r.vb + '" aria-hidden="true">' + (g ? g.innerHTML : '') + '</svg>';
+  }
+
+  /* Enregistré sur le téléphone : ok (gagnées), vus (déjà montrées dans la vue), port (tenues portées), danse (la danse préférée) */
+  var jeu = store.jeu = store.jeu || {};
+  jeu.ok = jeu.ok || {}; jeu.vus = jeu.vus || {}; jeu.port = jeu.port || {};
+  function jeuMesures(){
+    var m = { q: 0, s: 0, e: 0, n: null };
+    CHAPS.forEach(function(c){
+      var s = CH[c.id].stats();
+      m.q += s.q; m.e += s.tr;
+      if (s.best > m.s) m.s = s.best;
+      if (s.test != null && (m.n == null || s.test > m.n)) m.n = s.test;
+    });
+    return m;
+  }
+  function jeuGagnees(){ return REC.filter(function(r){ return jeu.ok[r.k]; }); }
+  function jeuNeuves(){ return REC.filter(function(r){ return jeu.ok[r.k] && !jeu.vus[r.k]; }); }
+  function minus(s){ return s.charAt(0).toLowerCase() + s.slice(1); }
+  /* Les accessoires portés, sur tous les Hector de la page */
+  function jeuHabille(){
+    if (!HK || !HK.tenue) return;
+    HK.tenue(REC.filter(function(r){ return r.acc && jeu.ok[r.k] && jeu.port[r.k]; }).map(function(r){ return r.acc; }));
+  }
+  /* Une danse gagnée (sans précision : la préférée). Renvoie false s'il n'y en a pas. */
+  function jeuDanse(o, k){
+    var r = RK[k || jeu.danse];
+    if (!o || !r || !r.pas || !jeu.ok[r.k]) return false;
+    var pas = r.pas.slice();
+    (function suite(){ var g = pas.shift(); if (g) o.anim(g).then(function(fini){ if (fini) suite(); }); })();
+    return true;
+  }
+  /* Ce qui vient d'être gagné. annonce : Hector le dit, et l'écran affiché se met à jour. */
+  function jeuVerifie(annonce){
+    var m = jeuMesures(), neuf = [];
+    REC.forEach(function(r){ var v = m[r.but[0]]; if (!jeu.ok[r.k] && v != null && v >= r.but[1]){ jeu.ok[r.k] = 1; neuf.push(r); } });
+    if (!neuf.length) return neuf;
+    save();
+    if (!annonce) return neuf;
+    if (owlTop){
+      try {
+        var un = neuf.length === 1 ? neuf[0] : null;
+        var fr = un ? (un.acc ? 'Nouvelle tenue : ' : 'Nouvelle danse : ') + minus(un.fr) + ' !' : neuf.length + ' nouvelles récompenses !';
+        var it = un ? (un.acc ? 'Nuovo vestito: ' : 'Nuovo ballo: ') + minus(un.it) + '!' : neuf.length + ' nuovi premi!';
+        owlTop.anim('fierte');
+        owlTop.speak('<span class="fr">' + typo(fr + ' Va voir sur l’accueil.', true) + '</span><span class="it">' + it + ' Guarda nella home.</span>', { muet: true });
+      } catch (e) {}
+    }
+    if (!cur.ch){ if (cur.v === 'hector') renderJeu(); else renderHome(); }
+    return neuf;
+  }
+  var jeuT = 0;
+  function jeuBientot(ms){ clearTimeout(jeuT); jeuT = setTimeout(function(){ jeuT = 0; jeuVerifie(true); }, ms); }
+
+  /* Le bouton de l'accueil */
+  function jeuBouton(){
+    var n = jeuGagnees().length, neuves = jeuNeuves().length;
+    return '<a class="jeu-b" href="#hector"><span class="jeu-bi">' + ICON_JEU + '</span><span class="jeu-bt">' +
+      '<span class="jeu-b1"><span class="fr">' + typo('Tenues et danses d’Hector', true) + '</span><span class="it sub-it">Vestiti e balli di Hector</span></span>' +
+      '<span class="jeu-b2 ui"><span><b>' + n + '</b> / ' + REC.length + ' <span class="fr">gagnées</span><span class="it">vinti</span></span>' +
+      (neuves ? '<span class="jeu-neuf"><span class="fr">Nouveau</span><span class="it">Nuovo</span></span>' : '') + '</span>' +
+      '</span><span class="chap-go" aria-hidden="true">' + ICON_NEXT + '</span></a>';
+  }
+
+  /* La vue : Hector, la récompense choisie, puis les tenues et les danses */
+  var vJeu = document.getElementById('v-hector'), jeuSel = null, jeuOwl = null, jeuNeufs = {};
+  function jeuTuile(r, m){
+    var ok = !!jeu.ok[r.k], v = m[r.but[0]] || 0, t = r.but[1], etat;
+    if (!ok) etat = '<span class="jeu-l">' + ICON_LOCK + '<span>' + (r.but[0] === 'n' ? t + ' / 20' : Math.min(v, t) + ' / ' + t) + '</span></span>';
+    else if (r.acc && jeu.port[r.k]) etat = '<span class="jeu-e on">' + biUI('porté', 'indossato') + '</span>';
+    else if (!r.acc && jeu.danse === r.k) etat = '<span class="jeu-e on">' + biUI('sa danse', 'il suo ballo') + '</span>';
+    else if (jeuNeufs[r.k]) etat = '<span class="jeu-e neuf">' + biUI('nouveau', 'nuovo') + '</span>';
+    else etat = '<span class="jeu-e">' + biUI('gagné', 'vinto') + '</span>';
+    return '<button class="jeu-t' + (ok ? ' ok' : '') + '" type="button" data-rec="' + r.k + '" aria-pressed="' + (jeuSel === r.k) + '">' +
+      '<span class="jeu-i">' + jeuImage(r) + '</span><span class="jeu-tn">' + biUI(r.c[0], r.c[1]) + '</span>' + etat + '</button>';
+  }
+  function jeuFiche(r, m){
+    var ok = !!jeu.ok[r.k], h = '<p class="jeu-k">' + (r.acc ? biUI('Tenue', 'Vestito') : biUI('Danse', 'Ballo')) + '</p>' +
+      '<h2 class="jeu-n"><span class="fr">' + r.fr + '</span><span class="it">' + r.it + '</span></h2>';
+    if (!ok){
+      var b = BUT[r.but[0]](r.but[1]), ou = jeuOu(r, m), v = m[r.but[0]] || 0;
+      h += '<p class="fr">' + typo(b.fr, true) + '</p><p class="it">' + b.it + '</p>' +
+        '<div class="prog"><i style="width:' + Math.min(100, Math.round(v / r.but[1] * 100)) + '%"></i></div>' +
+        '<p class="jeu-ou">' + biUI(typo(ou.fr, true), ou.it) + '</p>';
+    } else if (r.acc){
+      h += '<button class="btn pri jeu-a" type="button">' + (jeu.port[r.k] ? biUI('Enlever', 'Togli') : biUI('Mettre', 'Indossa')) + '</button>';
+    } else {
+      h += '<button class="btn pri jeu-a" type="button">' + biUI('Danser', 'Balla') + '</button>' +
+        (jeu.danse === r.k ? '<p class="jeu-ou">' + biUI('Hector la danse quand tu finis un exercice.', 'Hector lo balla quando finisci un esercizio.') + '</p>' : '');
+    }
+    return h;
+  }
+  /* Sur l'Hector de la vue : les tenues portées, et celle que l'on regarde (on l'essaie, même pas encore gagnée) */
+  function jeuEssai(){
+    if (!jeuOwl) return;
+    var r = RK[jeuSel];
+    REC.forEach(function(x){ if (x.acc) jeuOwl.el.classList.toggle('acc-' + x.acc, !!(jeu.ok[x.k] && jeu.port[x.k])); });
+    if (r && r.acc){
+      if (r.gr) REC.forEach(function(x){ if (x.acc && x.gr === r.gr) jeuOwl.el.classList.remove('acc-' + x.acc); });
+      jeuOwl.el.classList.add('acc-' + r.acc);
+    }
+  }
+  function renderJeu(){
+    if (!vJeu) return;
+    var m = jeuMesures();
+    if (!vJeu.firstChild){
+      vJeu.innerHTML = '<div class="jeu-h"><a class="btn sm ex-back" href="#accueil" aria-label="Accueil / Home">' + ICON_PREV + '</a>' +
+        '<h1 id="t-hector" class="ui"><span class="fr">Tenues et danses</span><span class="it">Vestiti e balli</span></h1><span class="jeu-c ui"></span></div>' +
+        '<div class="jeu-s"><div class="owl-slot"></div><div class="jeu-d" aria-live="polite"></div></div>' +
+        '<p class="jeu-gt">' + biUI('Tenues', 'Vestiti') + '</p><div class="jeu-g t"></div>' +
+        '<p class="jeu-gt">' + biUI('Danses', 'Balli') + '</p><div class="jeu-g d"></div>';
+      jeuOwl = mkOwl($('.owl-slot', vJeu), { sommeil: false });
+    }
+    if (!RK[jeuSel]) jeuSel = (jeuNeuves()[0] || REC.filter(function(r){ return !jeu.ok[r.k]; }).sort(function(a, b){ return (m[b.but[0]] || 0) / b.but[1] - (m[a.but[0]] || 0) / a.but[1]; })[0] || REC[0]).k;
+    $('.jeu-c', vJeu).innerHTML = '<b>' + jeuGagnees().length + '</b> / ' + REC.length;
+    $('.jeu-d', vJeu).innerHTML = jeuFiche(RK[jeuSel], m);
+    $('.jeu-g.t', vJeu).innerHTML = REC.filter(function(r){ return r.acc; }).map(function(r){ return jeuTuile(r, m); }).join('');
+    $('.jeu-g.d', vJeu).innerHTML = REC.filter(function(r){ return !r.acc; }).map(function(r){ return jeuTuile(r, m); }).join('');
+    jeuEssai();
+  }
+  /* En arrivant dans la vue : ce qui a été gagné depuis la dernière visite est marqué « nouveau », et Hector fait la fête */
+  function ouvreJeu(){
+    jeuVerifie(false);
+    jeuNeufs = {};
+    var neuves = jeuNeuves();
+    neuves.forEach(function(r){ jeuNeufs[r.k] = 1; jeu.vus[r.k] = 1; });
+    jeuSel = neuves.length ? neuves[0].k : null;
+    if (neuves.length) save();
+    renderJeu();
+    if (neuves.length && jeuOwl) setTimeout(function(){ try { jeuOwl.anim('danse'); if (HK) HK.confetti(); } catch (e) {} }, 350);
+  }
+  if (vJeu) vJeu.addEventListener('click', function(ev){
+    var t = ev.target.closest ? ev.target.closest('[data-rec]') : null, r;
+    if (t){ jeuSel = t.getAttribute('data-rec'); renderJeu(); return; }
+    if (!(ev.target.closest && ev.target.closest('.jeu-a'))) return;
+    r = RK[jeuSel];
+    if (!r || !jeu.ok[r.k]) return;
+    if (r.acc){
+      if (jeu.port[r.k]) delete jeu.port[r.k];
+      else { if (r.gr) REC.forEach(function(x){ if (x.gr === r.gr) delete jeu.port[x.k]; }); jeu.port[r.k] = 1; }
+      save(); jeuHabille(); renderJeu();
+      if (jeuOwl && jeu.port[r.k]) try { jeuOwl.anim('fierte'); } catch (e) {}
+    } else {
+      jeu.danse = r.k; save(); renderJeu();
+      jeuDanse(jeuOwl, r.k);
+    }
+  });
+  /* Au lancement : ce que le travail déjà fait a fait gagner (sans annonce : le bouton de l'accueil le montre), et la tenue portée */
+  jeuVerifie(false);
+  jeuHabille();
   /* Démarrage : langue enregistrée, puis affichage de la vue demandée par l'adresse */
   appliqueLangue();
   route();

@@ -24,9 +24,11 @@ def nb(t):
 cours = ''.join(r(c['dossier'], f) for c in CHAPITRES for f in c['cours'])
 corps = '<template id="owl-tpl">' + r('commun', 'owl.svg') + '</template>\n' + nb(r('commun', 'shell_top.html') + r('commun', 'accueil.html') + cours + r('commun', 'shell_bottom.html'))
 donnees = 'var EXOS = [];\n' + '\n'.join(r(c['dossier'], f) for c in CHAPITRES for f in c['exercices'])
-hector = r('commun', 'owl_pre.js') + r('commun', 'chouette.js') + '\nwindow.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a.length) HECTOR_DIT = a; } };\n})();\n'
+hector = r('commun', 'owl_pre.js') + r('commun', 'chouette.js') + ('\nwindow.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a.length) HECTOR_DIT = a; },\n'
+          '  /* les accessoires portés par tous les Hector de la page */\n'
+          '  tenue: function(l){ ACCS.forEach(function(a){ S.owl.acc[a.k] = !!l && l.indexOf(a.k) >= 0; }); OWLS.forEach(function(o){ o.dress(); }); } };\n})();\n')
 appli = ('(function(){\n' + r('commun', 'base.js') + r('commun', 'question.js') + ''.join(r(c['dossier'], 'chapitre.js') for c in CHAPITRES)
-         + r('commun', 'moteur.js') + r('commun', 'hector.js') + r('commun', 'depart.js') + '\n})();\n')
+         + r('commun', 'moteur.js') + r('commun', 'hector.js') + r('commun', 'jeu.js') + r('commun', 'depart.js') + '\n})();\n')
 tete = ('<!doctype html>\n<html lang="fr" data-lang="both">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<meta name="theme-color" content="#FFFFFF">\n'

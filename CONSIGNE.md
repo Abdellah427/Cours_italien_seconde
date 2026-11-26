@@ -46,7 +46,7 @@ Il vise trois erreurs : appliquer la règle d'une autre opération (multiplier q
 
 ## Ce qu'il ne faut pas ajouter
 
-Pas de comptes, pas de connexion, pas d'Espace prof, pas d'orientation, pas de devoirs rendus en ligne, pas de serveur. La progression reste sur son téléphone. L'application doit rester simple : cours, exercices, entraînement, contrôle blanc.
+Pas de comptes, pas de connexion, pas d'Espace prof, pas d'orientation, pas de devoirs rendus en ligne, pas de serveur. La progression reste sur son téléphone. L'application doit rester simple : cours, exercices, entraînement, contrôle blanc. Une seule touche de jeu, pour donner envie de travailler : les tenues et les danses d'Hector (voir plus bas). Pas de classement, pas de points à dépenser, pas de boutique.
 
 ## L'application se suffit à elle-même
 
@@ -56,6 +56,30 @@ L'élève travaille seule avec l'application, sans le manuel à côté. Le livre
 - les exercices sont numérotés par l'application, dans l'ordre de la liste (1, 2, 3...) ;
 - pas de liste d'exercices « pour aller plus loin dans le manuel », pas de note annexe (histoire, logiciels) : seulement ce qui sert à réviser ;
 - dans les données, `num` et `page` gardent la trace de l'origine d'un exercice : ils ne sont pas affichés.
+
+## Les tenues et les danses d'Hector
+
+En travaillant, l'élève gagne dix récompenses pour Hector : six tenues (des accessoires qu'il porte partout dans l'application) et quatre danses. Sur l'accueil, sous Hector, un bouton mène à la vue où on les regarde, où on essaie une tenue, où on la met et où on le fait danser. Quand une récompense est gagnée pendant le travail, Hector l'annonce dans une bulle.
+
+| Récompense | Ce qu'il faut faire |
+| --- | --- |
+| Le crayon | 5 questions réussies dans les exercices |
+| L'écharpe | 15 questions réussies dans les exercices |
+| Le nœud papillon | 30 questions réussies dans les exercices |
+| Les lunettes de soleil | 5 questions réussies de suite à l'entraînement |
+| La toque | 10 / 20 ou plus à un contrôle blanc |
+| La couronne | 16 / 20 ou plus à un contrôle blanc |
+| La toupie (danse) | 3 questions réussies de suite à l'entraînement |
+| Le jongleur (danse) | 10 questions réussies à l'entraînement |
+| Le disco (danse) | 50 questions réussies dans les exercices |
+| Le moonwalk (danse) | 80 questions réussies dans les exercices |
+
+- Tout se compte tous chapitres confondus. Une récompense gagnée le reste, même si une question est remise « à refaire ».
+- Deux tenues au même endroit ne se portent pas ensemble (écharpe ou nœud papillon ; toque ou couronne). La danse choisie en dernier est celle qu'Hector fait quand un exercice est fini.
+- Les récompenses demandent du travail juste, pas du temps passé : rien ne se gagne en ouvrant une solution ou en touchant Hector.
+- Les règles et la vue sont dans `src/commun/jeu.js` (tableau `REC`). Un accessoire est un groupe `owl-acc-...` du dessin `owl.svg`, affiché par une classe `acc-...` (`chouette.css`) ; une danse est un geste de `chouette.js` (`OWL_ANIMS`) animé dans `chouette.css`. Pour en ajouter une : une ligne dans `REC`, le dessin ou le geste, la ligne du tableau ci-dessus, et le seuil dans `outils/teste.py` (`JEU_BUTS`), qui les réécrit une seconde fois pour les vérifier.
+- Enregistré sur le téléphone, dans `jeu` : `ok` (gagnées), `vus` (déjà montrées), `port` (tenues portées), `danse` (la danse préférée).
+- Les deux classes ont les mêmes récompenses ; en Seconde, les textes sont aussi en italien.
 
 ## Présentation : ce qui doit rester vrai
 

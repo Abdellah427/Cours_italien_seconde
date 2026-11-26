@@ -367,6 +367,49 @@ html[data-lang="both"] .chap-s .it{display:block;color:var(--owl-dark)}
 #v-accueil.choix .h-choix{display:inline}
 #v-accueil.choix .nivs{display:grid;gap:12px;margin-top:18px}
 #v-accueil.choix .nivs .chip{min-height:76px;font-size:1.35rem;border-radius:22px;box-shadow:var(--shadow)}
+/* ---------- Les tenues et les danses d'Hector ---------- */
+/* le bouton de l'accueil */
+#v-accueil.choix #home-jeu{display:none}
+.jeu-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border-radius:18px;padding:9px 12px 9px 10px;margin:10px 0 2px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);border:1.5px solid transparent;transition:transform .08s}
+.jeu-b:active{transform:translateY(2px);border-color:var(--blue-mid)}
+.jeu-bi{width:42px;height:42px;border-radius:13px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center}
+.jeu-bi svg{width:23px;height:23px}
+.jeu-bt{display:grid;gap:2px;min-width:0}
+.jeu-b1{font-family:var(--f-display);font-weight:600;font-size:1rem;line-height:1.2;color:var(--blue-ink)}
+.jeu-b2{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:.78rem;color:var(--muted);font-weight:700}
+.jeu-b2 b{color:var(--ink)}
+.jeu-neuf{background:var(--yellow);color:var(--ink);border-radius:999px;padding:2px 9px;font:600 .68rem/1.3 var(--f-display);letter-spacing:.05em;text-transform:uppercase}
+/* la vue : Hector et la récompense choisie, puis les tenues et les danses */
+#v-hector{margin-top:-8px}
+.jeu-h{display:flex;align-items:center;gap:10px;min-height:46px}
+.jeu-h h1{flex:1;min-width:0;font-size:1.3rem;font-weight:600;color:var(--blue-ink)}
+.jeu-c{font:600 .95rem/1 var(--f-display);color:var(--muted)}
+.jeu-c b{color:var(--ink)}
+.jeu-s{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:18px 14px 10px 12px;margin:4px 0 0;min-height:158px}
+.jeu-s .owl-slot{width:100px;margin:0 auto}
+.jeu-d p{margin:0 0 5px;font-size:.9rem;line-height:1.35}
+.jeu-d .jeu-k{font:600 .68rem/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--blue-deep);margin:0 0 2px}
+.jeu-n{font-size:1.18rem;font-weight:600;color:var(--blue-ink);margin:0 0 6px}
+html[data-lang="both"] .jeu-n .it{display:none}      /* la consigne est dans les deux langues : le nom, en français, suffit */
+html[data-lang="both"] .jeu-d p.it{margin-top:0;font-size:.86rem}
+.jeu-d .prog{margin:6px 0}
+.jeu-d .jeu-ou{color:var(--muted);font-weight:700;font-size:.8rem;margin:0}
+.jeu-a{margin:2px 0 6px}
+.jeu-gt{font:600 .7rem/1.2 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:8px 2px 5px}
+.jeu-g{display:grid;gap:8px}
+.jeu-g.t{grid-template-columns:repeat(3,minmax(0,1fr))}
+.jeu-g.d{grid-template-columns:repeat(4,minmax(0,1fr))}
+.jeu-t{display:grid;justify-items:center;align-content:center;gap:3px;min-width:0;min-height:76px;padding:6px 3px 5px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--f-display);-webkit-tap-highlight-color:transparent}
+.jeu-t[aria-pressed="true"]{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-mid)}
+.jeu-i{width:46px;height:30px;display:grid;place-items:center;color:var(--blue)}
+.jeu-i svg{display:block;width:46px;height:30px;overflow:visible}
+.jeu-t:not(.ok) .jeu-i{filter:grayscale(1);opacity:.4}
+.jeu-tn{font-weight:600;font-size:.74rem;line-height:1.15;color:var(--ink);text-align:center}
+.jeu-l{display:inline-flex;align-items:center;gap:3px;font:600 .68rem/1.3 var(--f-display);color:var(--muted)}
+.jeu-l svg{width:11px;height:11px}
+.jeu-e{font:600 .66rem/1.3 var(--f-display);color:var(--up-ink);border-radius:999px;padding:0 7px}
+.jeu-e.on{background:var(--good-soft)}
+.jeu-e.neuf{background:var(--yellow);color:var(--ink)}
 /* une classe écrite en français seulement : pas de choix de langue */
 html.mono .seg{display:none}
 .resume svg{flex:none}

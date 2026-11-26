@@ -335,6 +335,41 @@
 @keyframes owl-jongle-l { 50% { transform: rotate(34deg); } }
 @keyframes owl-jongle-r { 50% { transform: rotate(-34deg); } }
 
+/* ----- Tenues et danses à débloquer ----- */
+.owl.acc-bow .owl-acc-bow, .owl.acc-shades .owl-acc-shades, .owl.acc-crown .owl-acc-crown { display: inline; }
+.owl .owl-acc-crown { transform-origin: 410px 60px; }
+/* le crayon derrière l'oreille : un peu plus grand, pour qu'on le voie aussi sur le petit Hector de la barre du haut */
+.owl .owl-acc-pencil { transform-origin: 108px 78px; transform: translate(-46px, -52px) scale(1.45); }
+/* La toupie : deux tours sur soi-même, puis un petit saut */
+.owl.a-toupie .owl-all { transform-origin: 410px 480px; animation: owl-toupie 1.8s cubic-bezier(.45, 0, .3, 1); }
+@keyframes owl-toupie { 0% { transform: none; } 70% { transform: rotate(720deg); } 84% { transform: rotate(720deg) translateY(-80px); } 100% { transform: rotate(720deg); } }
+.owl.a-toupie .owl-wing-l { animation: owl-toupie-l 1.8s ease-in-out; }
+.owl.a-toupie .owl-wing-r { animation: owl-toupie-r 1.8s ease-in-out; }
+@keyframes owl-toupie-l { 8%, 66% { transform: rotate(58deg); } 84% { transform: rotate(40deg); } }
+@keyframes owl-toupie-r { 8%, 66% { transform: rotate(-58deg); } 84% { transform: rotate(-40deg); } }
+/* Le moonwalk : il glisse sur le côté, penché, une aile sur la tête, puis revient */
+.owl.a-moonwalk .owl-all { animation: owl-moonwalk 2.4s ease-in-out; }
+@keyframes owl-moonwalk { 0%, 100% { transform: none; } 8% { transform: rotate(-7deg); } 46% { transform: translateX(120px) rotate(-7deg); } 54% { transform: translateX(120px) rotate(7deg); } 92% { transform: rotate(7deg); } }
+.owl.a-moonwalk .owl-foot-l { animation: owl-glisse-l .6s ease-in-out 4; }
+.owl.a-moonwalk .owl-foot-r { animation: owl-glisse-r .6s ease-in-out 4; }
+@keyframes owl-glisse-l { 50% { transform: translate(-30px, -18px) rotate(-14deg); } }
+@keyframes owl-glisse-r { 0%, 50% { transform: none; } 75% { transform: translate(30px, -18px) rotate(14deg); } }
+.owl.a-moonwalk .owl-wing-r { animation: owl-moon-aile 2.4s ease-in-out; }
+@keyframes owl-moon-aile { 0%, 100% { transform: none; } 10%, 90% { transform: rotate(-118deg); } }
+.owl.a-moonwalk .owl-lid { animation: owl-moon-paup 2.4s ease-in-out; }
+@keyframes owl-moon-paup { 10%, 90% { transform: translateY(96px); } }
+/* Le disco : une aile pointée vers le ciel, puis l'autre */
+.owl.a-disco .owl-all { animation: owl-disco 2s ease-in-out; }
+@keyframes owl-disco { 0%, 25%, 50%, 75%, 100% { transform: none; } 12.5%, 62.5% { transform: translateY(-40px) rotate(7deg); } 37.5%, 87.5% { transform: translateY(-40px) rotate(-7deg); } }
+.owl.a-disco .owl-wing-l { animation: owl-disco-l 2s ease-in-out; }
+.owl.a-disco .owl-wing-r { animation: owl-disco-r 2s ease-in-out; }
+@keyframes owl-disco-l { 0%, 25%, 50%, 75%, 100% { transform: none; } 12.5%, 62.5% { transform: rotate(138deg); } 37.5%, 87.5% { transform: rotate(-10deg); } }
+@keyframes owl-disco-r { 0%, 25%, 50%, 75%, 100% { transform: none; } 37.5%, 87.5% { transform: rotate(-138deg); } 12.5%, 62.5% { transform: rotate(10deg); } }
+.owl.a-disco .owl-head, .owl.a-disco .owl-crane { animation: owl-disco-tete 2s ease-in-out; }
+@keyframes owl-disco-tete { 12.5%, 62.5% { transform: rotate(-6deg); } 37.5%, 87.5% { transform: rotate(6deg); } }
+.owl.a-disco .owl-oeil { display: none; }
+.owl.a-disco .owl-happy { display: inline; }
+
 /* Poses fixes quand les animations sont réduites */
 .owl.p-jokr .owl-acc-card, .owl.p-loupe .owl-acc-loupe { display: inline; }
 .owl.p-jokr .owl-eye-l .owl-oeil { display: none; }

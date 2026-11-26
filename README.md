@@ -1,6 +1,6 @@
 # SCOLAIR : maths avec Hector
 
-Application de révision sur téléphone : cours, exercices corrigés pas à pas, entraînement sans fin, contrôle blanc noté sur 20. Elle se suffit à elle-même : rien à l'écran ne renvoie à un manuel. Installable sur l'écran d'accueil, fonctionne hors ligne.
+Application de révision sur téléphone : cours, exercices corrigés pas à pas, entraînement sans fin, contrôle blanc noté sur 20. En travaillant, l'élève gagne des tenues et des danses pour Hector, la mascotte. L'application se suffit à elle-même : rien à l'écran ne renvoie à un manuel. Installable sur l'écran d'accueil, fonctionne hors ligne.
 
 Deux classes. Au premier lancement, l'application demande la classe ; l'écran d'accueil liste ensuite les chapitres de cette classe et la progression de chacun.
 
@@ -30,7 +30,8 @@ Ouvrir `autonome/scolair-maths-seconde.html` dans un navigateur, ou servir `docs
 - `base.js` : classes (Seconde, 3e), langue, stockage, textes bilingues ou en français seulement, schémas en bulles, registre des chapitres.
 - `question.js` : une question et sa correction (un nombre, des cases à remplir, un choix, ou un exercice à faire sur le cahier).
 - `moteur.js` : pour chaque chapitre, le cours, les exercices et le contrôle blanc en pages (découpage mesuré à la hauteur de l'écran, barre qui se remplit en haut, Précédent / Suivant en bas), la liste des exercices, l'entraînement ; l'écran d'accueil et la navigation.
-- `hector.js`, `owl_pre.js`, `chouette.js`, `chouette.css`, `owl.svg` : Hector.
+- `hector.js`, `owl_pre.js`, `chouette.js`, `chouette.css`, `owl.svg` : Hector (son dessin, ses accessoires, ses gestes).
+- `jeu.js` : les tenues et les danses d'Hector, gagnées en travaillant (règles, vue, annonce d'une récompense).
 - `app.css`, `scolair.css`, `maths.css` : styles (`maths.css` : formules, calculs posés ligne par ligne avec les signes « = » alignés, composants des cours écrits avec des formules).
 - `maj.js` : service worker et rechargement quand une version plus récente est en ligne.
 - `depart.js` : démarrage.
@@ -41,6 +42,6 @@ Ouvrir `autonome/scolair-maths-seconde.html` dans un navigateur, ou servir `docs
 - `ex*.js` : les exercices (format : `outils/FORMAT-EXERCICES.md`).
 - `chapitre.js` : titre, classe, groupes d'exercices, questions d'entraînement aléatoires, questions du contrôle blanc.
 
-Adresses dans l'application : `#accueil`, puis `#c10/cours`, `#c10/exercices`, `#c10/entrainement`, `#c10/controle` (de même avec `c3`, et avec `t1` pour le chapitre de 3e). `#3e` et `#2de` ouvrent l'accueil d'une classe : c'est le lien à donner à une élève pour qu'elle arrive directement dans la sienne.
+Adresses dans l'application : `#accueil`, puis `#c10/cours`, `#c10/exercices`, `#c10/entrainement`, `#c10/controle` (de même avec `c3`, et avec `t1` pour le chapitre de 3e). `#3e` et `#2de` ouvrent l'accueil d'une classe : c'est le lien à donner à une élève pour qu'elle arrive directement dans la sienne. `#hector` ouvre les tenues et les danses.
 
 Voir `CONSIGNE.md` pour la mise en ligne, la mise à jour hebdomadaire et l'ajout d'un chapitre.

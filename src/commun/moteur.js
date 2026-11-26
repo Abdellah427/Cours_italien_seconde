@@ -775,7 +775,8 @@
         if (v === 'controle'){ if (!testQs && c.tq.length) newTest(); else retest(); }
         if (v === 'cours') showPart(st.part || lessons[0].id);
       },
-      stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest }; },
+      /* q : questions réussies dans les exercices ; tr : bonnes réponses à l'entraînement (pour les récompenses d'Hector) */
+      stats: function(){ return { done: EX.filter(isDone).length, total: EX.length, best: st.tr.best, test: st.bestTest, q: EX.reduce(function(n, e){ return n + nDone(e); }, 0), tr: st.tr.total }; },
       reveal: reveal,
       /* Ouvre un exercice dans la liste et renvoie sa carte */
       openExo: function(id){
@@ -827,6 +828,7 @@
       var c = CH[l.ch].c;
       r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + FR(c.short) + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + IT(c.short) + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
     } else r.innerHTML = '';
+    $('#home-jeu').innerHTML = n ? jeuBouton() : '';      /* les tenues et les danses d'Hector */
   }
   /* Changer de classe sur l'accueil */
   document.addEventListener('click', function(ev){
@@ -837,7 +839,7 @@
   });
 
   var cur = { ch: null, v: 'accueil' }, scrolls = {}, pending = null, started = false;
-  function keyOf(r){ return r.ch ? r.ch + '/' + r.v : 'accueil'; }
+  function keyOf(r){ return r.ch ? r.ch + '/' + r.v : r.v; }
   function parseHash(){
     var h = (location.hash || '').replace(/^#\/?/, '');
     if (VIEWS.indexOf(h) >= 0 && CH.c10) return { ch: 'c10', v: h };
@@ -845,6 +847,7 @@
     if (m && CH[m[1]] && VIEWS.indexOf(m[2]) >= 0) return { ch: m[1], v: m[2] };
     /* #3e, #2de : l'accueil d'une classe (le lien à donner à une élève) */
     if (NIVEAUX.some(function(x){ return x.k === h; })) return { ch: null, v: 'accueil', niv: h };
+    if (h === 'hector' && niv()) return { ch: null, v: 'hector' };      /* les tenues et les danses d'Hector */
     return { ch: null, v: 'accueil' };
   }
   function route(){
@@ -856,7 +859,8 @@
     if (!home) setNiv(nivDe(ch.c)); else if (r.niv) setNiv(r.niv); else appliqueLangue();      /* la classe suit le chapitre affiché */
     document.body.classList.toggle('at-home', home);
     document.documentElement.classList.remove('plein');      /* remis par la vue des exercices quand un exercice y est ouvert */
-    if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
+    if (home && r.v === 'hector'){ document.getElementById('v-hector').hidden = false; ouvreJeu(); }
+    else if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
     else {
       ch.el[r.v].hidden = false;
       ch.enter(r.v);

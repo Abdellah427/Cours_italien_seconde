@@ -19,6 +19,7 @@ const OWL_ANIMS = {
   reveil: { ms: 1400, p: "caty" }, rire: { ms: 900, p: "cay" }, tourne: { ms: 900, p: "c" }, ebouriffe: { ms: 650, p: "ct" },
   lunettes: { ms: 1400, p: "y" }, regard: { ms: 1800, p: "ty" }, aigrette: { ms: 500, p: "t" }, parle: { ms: 450, p: "t" },
   loupe: { ms: 2300, p: "ayx" }, jongle: { ms: 1600, p: "ay" },
+  toupie: { ms: 1800, p: "ca" }, moonwalk: { ms: 2400, p: "caty" }, disco: { ms: 2000, p: "caty" },      // danses à débloquer
   reflechir: { ms: 1800, etat: "think" }, lire: { ms: 3400, etat: "read" }, dormir: { ms: 0, etat: "sleep" },
 };
 const OWL_ANIM_ALIAS = {
@@ -28,7 +29,7 @@ const OWL_ANIM_ALIAS = {
   search: "loupe", chercher: "loupe", juggle: "jongle", think: "reflechir", read: "lire", sleep: "dormir", endormi: "dormir",
 };
 // En mode calme, certains gestes deviennent une pose fixe ; les autres ne font rien.
-const OWL_POSES = { danse: "happy", fierte: "proud", toque: "happy", rire: "happy", saut: "happy", surprise: "surprise", reveil: null };
+const OWL_POSES = { danse: "happy", fierte: "proud", toque: "happy", rire: "happy", saut: "happy", surprise: "surprise", reveil: null, toupie: "happy", moonwalk: "happy", disco: "happy" };
 // Effets qui accompagnent certains gestes (étincelles, symboles, ! et ?).
 const OWL_EFFETS = {
   toque: (o) => setTimeout(() => o.eclats(6), 1450),
@@ -38,6 +39,8 @@ const OWL_EFFETS = {
   surprise: (o) => o.marque("!"),
   reveil: (o) => o.marque("!"),
   jongle: (o) => o.symboles(),
+  disco: (o) => { o.eclats(3); setTimeout(() => o.eclats(3), 1000); },
+  toupie: (o) => setTimeout(() => o.eclats(3), 1300),
 };
 let owlUid = 0;
 
