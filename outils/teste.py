@@ -18,13 +18,13 @@ def frnum(x, d):
     if '.' in s: s = s.rstrip('0').rstrip('.')
     return ('-' if x < 0 and v != 0 else '') + s.replace('.', ',')
 def dec(tol):
-    for d, lim in ((0, .5), (1, .05), (2, .005), (3, .0005)):
+    for d, lim in ((0, .5), (1, .05), (2, .005), (3, .0005), (4, .00005)):
         if tol >= lim: return d
-    return 4
+    return 8      # réponse exacte : toutes ses décimales (0,004 05)
 def num(s): return float(norm(s).replace(' ', '').replace(',', '.'))
 
 # Données des exercices de tous les chapitres, lues avec Node
-FICHIERS = sorted(f for f in glob.glob(os.path.join(R, 'src', 'ch*', '*.js')) if not f.endswith('chapitre.js'))
+FICHIERS = sorted(f for f in glob.glob(os.path.join(R, 'src', '*', 'ex*.js')))
 data = json.loads(subprocess.check_output(['node', '-e',
     "const fs=require('fs'),vm=require('vm');const c={EXOS:[]};vm.createContext(c);"
     "for(const f of " + json.dumps(FICHIERS) + "){vm.runInContext(fs.readFileSync(f,'utf8'),c,{filename:f})}"
@@ -309,6 +309,87 @@ def qcm_c3(pg, q, fr):
         v = ev(m[2], int(m[1]))
         return ('test', lambda o: ev(o) == v)
     return None
+
+# ---------- 3e, calculs : recalcul à partir des formules affichées ----------
+def nature(s):
+    """Nature d'un calcul écrit en ligne : celle de la dernière opération à faire."""
+    prof, plus, mult = 0, None, None
+    for i, c in enumerate(s):
+        if c == '(': prof += 1
+        elif c == ')': prof -= 1
+        elif prof == 0:
+            avant = s[:i].strip()
+            if c in '+-' and avant and avant[-1] not in '+-*/(^': plus = c
+            elif c in '*/': mult = c
+    if plus: return 'une somme' if plus == '+' else 'une différence'
+    if mult: return 'un produit' if mult == '*' else 'un quotient'
+    return None
+def scientifique(v):
+    e = 0
+    while abs(v) >= 10: v /= 10; e += 1
+    while abs(v) < 1: v *= 10; e -= 1
+    return v, e
+def tr_t1(pg, card):
+    typ = norm(card.query_selector('.qtype .fr').text_content())
+    mq = re.sub(r'^A = ', '', lin(pg, card.query_selector('.qtext .mq')))
+    fexp = card.query_selector('.fexp')
+    tpl = clean(lin(pg, fexp)) if fexp else ''
+    if typ in ('Priorités', 'Puissances'): return ('nombre', ev(mq))
+    if typ == 'Somme ou produit ?': return ('choix', nature(mq))
+    if typ in ('Fractions', 'Fractions et priorités'):
+        v = ev(mq)
+        return ('cases', [v.numerator, v.denominator]) if tpl == '=±((#0)/(#1))' else None
+    if typ == 'Puissances de 10':
+        v = ev(mq)
+        if tpl == '=10^(±#0)':
+            n = [k for k in range(-60, 61) if Fraction(10) ** k == v]
+            return ('cases', [n[0]]) if len(n) == 1 else None
+        return ('nombre', v) if not tpl else None
+    if typ == 'Écriture scientifique':
+        v, e = scientifique(ev(mq))
+        return ('cases', [float(v), e]) if tpl == '=#0*10^(±#1)' else None
+    return None
+def qcm_t1(pg, q, fr):
+    s = re.sub(r'^\d+\.\s*', '', lin(pg, q.query_selector('.qtext .fr')))
+    m = re.match(r'^(.*) est égal à :$', s)
+    if m:
+        v = ev(m[1]); return ('test', lambda o: meme(ev(o), v))
+    m = re.match(r'^Les (.*) de (\d+) font :$', s)
+    if m:
+        v = ev(m[1]) * int(m[2]); return ('test', lambda o: meme(ev(o), v))
+    m = re.match(r'^L’écriture scientifique de (.*) est :$', s)
+    if m:
+        v = ev(m[1])
+        def sci(o):
+            mm = re.match(r'^(\d+(?:\.\d+)?) \* 10\^\((-?\d+)\)$', o)
+            return bool(mm) and 1 <= Fraction(mm[1]) < 10 and Fraction(mm[1]) * Fraction(10) ** int(mm[2]) == v
+        return ('test', sci)
+    m = re.match(r'^Sans calculer : (.*) est :$', s)
+    if m:
+        n = nature(m[1]); return ('test', lambda o: clean(o) == clean(n))
+    return None
+def verifie_solution_t1(pg, card, exp):
+    """Solution d'une question d'entraînement de 3e : chaque ligne de calcul doit avoir la valeur de l'expression de l'énoncé."""
+    pb = []
+    sb = card.query_selector('.sb')
+    if not sb: return pb
+    ref = ev(re.sub(r'^A = ', '', lin(pg, card.query_selector('.qtext .mq'))))
+    sb.click()
+    rows = []
+    for c in card.query_selector_all('.panel.sol .calc'): rows += rangees(pg, c)
+    if not rows: return ['solution sans ligne de calcul']
+    compte['lignes'] += len(rows)
+    for x in pg.evaluate(POSE, card.query_selector('.panel.sol'))[1]: pb.append(x)
+    dernier = None
+    for r in rows:
+        morceaux = ([r[1]] if r[1] and r[1] != 'A' else []) + [r[2]] if r[0] == 'eq' else [r[1]]
+        for m in morceaux:
+            m = re.sub(r'^= ?', '', m)
+            try:
+                dernier = ev(m)
+                if not meme(dernier, ref): pb.append('ligne de solution fausse : %s (énoncé : %s)' % (m, ref))
+            except Exception as ex: pb.append('ligne de solution illisible : %s (%s)' % (m, ex))
+    return pb
 
 compte = {'lignes': 0, 'explications': 0, 'calculs': 0, 'formules': 0, 'pages': 0, 'pages_exos': 0, 'pages_controle': 0}
 
@@ -646,7 +727,21 @@ def controle_pages(pg, ch, ou):
 
 # Par chapitre : recalcul de l'entraînement, recalcul du contrôle, thèmes de l'entraînement
 RECALCUL = {'c10': (tr_c10, qcm_c10, ['cm', 'succ', 'recip', 'init', 'mix']),
-            'c3': (tr_c3, qcm_c3, ['calc', 'rac', 'dev', 'fact', 'eq', 'ineq', 'mix'])}
+            'c3': (tr_c3, qcm_c3, ['calc', 'rac', 'dev', 'fact', 'eq', 'ineq', 'mix']),
+            't1': (tr_t1, qcm_t1, ['prio', 'nat', 'frac', 'fprio', 'p10', 'sci', 'mix'])}
+SANS_BALISE = re.compile(r'<[^>]+>')
+def plat(s): return re.sub(r'\s+', ' ', norm(s))      # un texte lu à l'écran, sans ses retours à la ligne
+def debut(html): return plat(SANS_BALISE.sub('', re.sub(r'<br\s*/?>', ' ', html)))[:25]      # début d'un message, tel qu'il se lit à l'écran
+
+def tape_cases(box, vals):
+    """Remplit les cases d'une question (exercice) et vérifie. Renvoie False si une valeur ne peut pas être tapée (pas de bouton de signe)."""
+    for i, v in enumerate(vals):
+        b = box.query_selector('.bx[data-b="%d"]' % i); sg = box.query_selector('.sgn[data-b="%d"]' % i)
+        if v < 0 and not sg: return False
+        b.fill(frnum(abs(float(v)), 8))
+        if sg and (sg.get_attribute('data-s') == '-1') != (v < 0): sg.click()
+    box.query_selector('.chk').click()
+    return True
 
 def reponds(pg, card, exp):
     """Tape la réponse attendue dans une question d'entraînement. exp : nombre (un champ) ou liste (cases)."""
@@ -654,17 +749,17 @@ def reponds(pg, card, exp):
         for i, v in enumerate(exp):
             box = card.query_selector('.bx[data-b="%d"]' % i)
             sg = card.query_selector('.sgn[data-b="%d"]' % i)
-            box.fill(frnum(abs(float(v)), 4))
+            box.fill(frnum(abs(float(v)), 8))
             if sg and (sg.get_attribute('data-s') == '-1') != (v < 0): sg.click()
             if not sg and v < 0: return False
     else:
-        card.query_selector('input').fill(frnum(float(exp), 4))
+        card.query_selector('input').fill(frnum(float(exp), 8))
     card.query_selector('.chk').click()
     return True
 
 with sync_playwright() as p:
-    b = p.chromium.launch(executable_path=os.environ.get('CHROMIUM') or None)
-    pg = b.new_page(viewport={'width': 390, 'height': 844})
+    navigateur = p.chromium.launch(executable_path=os.environ.get('CHROMIUM') or None)
+    pg = navigateur.new_page(viewport={'width': 390, 'height': 844})
     pg.on('pageerror', lambda e: errs.append('pageerror: ' + str(e)))
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' and 'ERR_' not in m.text and 'Failed to load' not in m.text else None)
     pg.goto(URL); pg.wait_for_timeout(300)
@@ -676,8 +771,23 @@ with sync_playwright() as p:
     except Exception as ex: info.append('marges de l’iPhone non émulées : ' + str(ex)[:80])
     info.append('marge haute de la barre : ' + pg.evaluate("getComputedStyle(document.querySelector('.appbar')).paddingTop"))
     pg.evaluate(POLICES); pg.wait_for_timeout(300)
-    chaps = pg.evaluate("[...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch)")
-    info.append('chapitres : ' + ', '.join(chaps))
+    # premier lancement : l'accueil demande la classe ; chaque classe a ses chapitres ; la 3e est en français seulement
+    chk(pg.evaluate("document.getElementById('v-accueil').classList.contains('choix')") and not pg.query_selector_all('#home-list .chap') and pg.is_hidden('#v-accueil .coach'),
+        'au premier lancement, l’accueil doit seulement demander la classe')
+    niveaux = pg.evaluate("[...document.querySelectorAll('#home-niv [data-niv]')].map(b => b.dataset.niv)")
+    chk(niveaux == ['2de', '3e'], 'classes proposées : %s' % niveaux)
+    chaps, NIV, MONO = [], {}, set()
+    for k in niveaux:
+        pg.click('#home-niv [data-niv="%s"]' % k); pg.wait_for_timeout(100)
+        liste = pg.evaluate("[...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch)")
+        etat = pg.evaluate("({ mono: document.documentElement.classList.contains('mono'), lang: document.documentElement.getAttribute('data-lang'), choix: document.getElementById('v-accueil').classList.contains('choix'), sous: document.querySelector('.brand-s').innerText, appuye: document.querySelector('#home-niv [aria-pressed=\"true\"]').dataset.niv })")
+        chk(liste and not etat['choix'] and etat['appuye'] == k, 'classe %s : chapitres %s, état %s' % (k, liste, etat))
+        chk(pg.is_hidden('.seg') == etat['mono'] and (etat['lang'] == 'fr' if etat['mono'] else etat['lang'] == 'both'), 'classe %s : choix de la langue %s' % (k, etat))
+        for c in liste: NIV[c] = k
+        if etat['mono']: MONO.update(liste)
+        chaps += liste
+    chk(len(set(chaps)) == len(chaps) and MONO == {c for c in chaps if NIV[c] == '3e'}, 'chapitres par classe : %s, en français seulement : %s' % (NIV, MONO))
+    info.append('chapitres : ' + ', '.join('%s (%s)' % (c, NIV[c]) for c in chaps))
     chk(set(chaps) == set(e['ch'] for e in data), 'chapitres affichés %s, chapitres des données %s' % (chaps, sorted(set(e['ch'] for e in data))))
     chk(pg.is_hidden('.tabbar'), "la barre d'onglets doit être cachée sur l'accueil")
     for ch in chaps:
@@ -704,13 +814,13 @@ with sync_playwright() as p:
                     inp = box.query_selector('input')
                     va_a(pg, V, inp, w)
                     for t in part.get('traps', []):
-                        inp.fill(frnum(t['v'], 4)); box.query_selector('.chk').click()
-                        fb = norm(box.query_selector('.fbw').inner_text())
-                        chk(norm(t['fr'])[:25] in fb, '%s piège %s non reconnu : %s' % (w, t['v'], fb[:60]))
+                        inp.fill(frnum(t['v'], 8)); box.query_selector('.chk').click()
+                        fb = plat(box.query_selector('.fbw').inner_text())
+                        chk(debut(t['fr']) in fb, '%s piège %s non reconnu : %s' % (w, t['v'], fb[:60]))
                     if part['sign'] == 'strict' and abs(part['ans']) > part['tol'] * 3:
                         inp.fill(frnum(-part['ans'], dec(part['tol']))); box.query_selector('.chk').click()
                         fb = norm(box.query_selector('.fbw').inner_text())
-                        trap_hit = any(abs(-part['ans'] - t['v']) <= max(part['tol'], .006) for t in part.get('traps', []))
+                        trap_hit = any(abs(-part['ans'] - t['v']) <= (max(part['tol'], .006) if part['tol'] else 0) + 1e-9 for t in part.get('traps', []))
                         chk(trap_hit or 'signe' in fb, '%s signe non détecté : %s' % (w, fb[:60]))
                     inp.fill(frnum(part['ans'], dec(part['tol']))); box.query_selector('.chk').click()
                     chk('juste' in box.query_selector('.fbw').inner_text(), '%s bonne réponse %s refusée : %s' % (w, frnum(part['ans'], dec(part['tol'])), box.query_selector('.fbw').inner_text()[:60]))
@@ -730,6 +840,26 @@ with sync_playwright() as p:
                         if part.get('fb'): chk(len(norm(box.query_selector('.fbw .panel.why').inner_text())) > 10, '%s bonne réponse %d sans explication' % (w, k))
                     chk('juste' in box.query_selector('.fbw').inner_text().lower(), '%s choix correct refusé' % w)
                     chk('solved' in (box.get_attribute('class') or ''), w + ' pas marqué réussi')
+                elif part['kind'] == 'fill':
+                    va_a(pg, V, box.query_selector('.bx'), w)
+                    ans = part['ans']
+                    for t in part.get('traps', []):
+                        if any(x is None for x in t['v']) or not tape_cases(box, t['v']): continue
+                        fb = plat(box.query_selector('.fbw').inner_text())
+                        chk(debut(t['fr']) in fb and 'solved' not in (box.get_attribute('class') or ''), '%s piège %s non reconnu : %s' % (w, t['v'], fb[:60]))
+                    for haut, bas in part.get('frac', []):      # une fraction égale mais pas irréductible
+                        v = list(ans); v[haut] *= 2; v[bas] *= 2
+                        tape_cases(box, v)
+                        chk('irréductible' in box.query_selector('.fbw').inner_text(), '%s : la fraction non simplifiée %s doit être signalée' % (w, v))
+                    if part.get('sci'):                    # le même nombre, mais pas en écriture scientifique
+                        v = list(ans); v[part['sci'][0]] *= 10; v[part['sci'][1]] -= 1
+                        tape_cases(box, v)
+                        chk('écriture scientifique' in box.query_selector('.fbw').inner_text(), '%s : %s n’est pas une écriture scientifique' % (w, v))
+                    faux = list(ans); faux[0] += 1
+                    tape_cases(box, faux)
+                    chk('solved' not in (box.get_attribute('class') or ''), '%s : réponse fausse %s acceptée' % (w, faux))
+                    chk(tape_cases(box, ans), w + ' : la bonne réponse ne peut pas être tapée (signe)')
+                    chk('juste' in box.query_selector('.fbw').inner_text() and 'solved' in (box.get_attribute('class') or ''), '%s bonne réponse %s refusée : %s' % (w, ans, box.query_selector('.fbw').inner_text()[:60]))
                 elif part['kind'] == 'self':
                     chk(box.query_selector('.panel.sol').is_hidden(), w + ' : la solution doit être cachée au départ')
                     va_a(pg, V, box.query_selector('.sb'), w)
@@ -741,10 +871,12 @@ with sync_playwright() as p:
                     chk(box.query_selector('.panel.sol').is_visible(), w + " : la solution ne s'ouvre pas")
                     va_a(pg, V, box.query_selector('.sok'), w)      # la solution peut continuer sur les pages suivantes : les deux boutons sont à la fin
                     box.query_selector('.sok').click()
-                    chk('done' in (art.get_attribute('class') or ''), w + ' pas marqué réussi')
+                    cl = lambda el: (el.get_attribute('class') or '').split()
+                    faites = sum(1 for x in art.query_selector_all('.part') if 'solved' in cl(x))      # un exercice peut avoir plusieurs questions à faire sur le cahier
+                    chk('solved' in cl(box) and ('done' if faites == len(e['parts']) else 'part-done') in cl(art), w + ' pas marqué réussi')
                     chk('réussi' in box.query_selector('.selfq .fbw').inner_text(), w + ' : le message de réussite doit s’afficher sous les deux boutons')
                     box.query_selector('.sko').click()
-                    chk('done' not in (art.get_attribute('class') or ''), w + ' : « À refaire » ne retire pas la réussite')
+                    chk('solved' not in cl(box) and 'done' not in cl(art) and ('part-done' in cl(art)) == (faites > 1), w + ' : « À refaire » ne retire pas la réussite')
                     box.query_selector('.sok').click()
                 else:
                     fails.append(w + ' : type de question inconnu du test : ' + str(part['kind']))
@@ -795,8 +927,8 @@ with sync_playwright() as p:
                 fb = card.query_selector('.fbw').inner_text()
                 if card.query_selector('.fbw .fb.ok') and 'solved' in (card.query_selector('.tr-part').get_attribute('class') or ''):
                     n_ok += 1
-                    if ch == 'c3' and exp[0] != 'choix':
-                        for x in verifie_solution(pg, card, exp): fails.append('%s solution : %s | %s' % (ch, fr[:70].replace('\n', ' '), x))
+                    if ch in ('c3', 't1') and exp[0] != 'choix':
+                        for x in (verifie_solution if ch == 'c3' else verifie_solution_t1)(pg, card, exp): fails.append('%s solution : %s | %s' % (ch, fr[:70].replace('\n', ' '), x))
                 else: fails.append('%s entraînement refusé : %s | %s | %s' % (ch, fr[:90], exp[1], norm(fb)[:60]))
                 ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
                 chk(ov <= 0, '%s débordement entraînement : %s' % (ch, fr[:60]))
@@ -828,7 +960,7 @@ with sync_playwright() as p:
                 chk(len(set(opts)) == len(opts), 'options en double : %s' % opts)
                 if exp is None: fails.append('%s contrôle non lu : %s' % (ch, fr)); continue
                 n_q += 1
-                if ch == 'c3':
+                if ch in ('c3', 't1'):
                     for x in verifie_explications(pg, q.query_selector('.fbw')): fails.append('%s contrôle : %s | %s' % (ch, norm(fr)[:70], x))
                 if isinstance(exp, tuple):
                     # un test mathématique par réponse : une seule doit le passer, celle que l'application marque juste
@@ -845,8 +977,9 @@ with sync_playwright() as p:
             pg.evaluate("(C) => document.querySelector(C + ' .test-new').click()", C); pg.wait_for_timeout(50)
         info.append('%s questions de contrôle vérifiées : %d' % (ch, n_q))
     # 4. Navigation : accueil, carte du chapitre, onglets, anciennes adresses
-    pg.goto(URL + '#accueil'); pg.wait_for_timeout(150)
     for ch in chaps:
+        pg.goto(URL + '#' + NIV[ch]); pg.wait_for_timeout(150)      # l'accueil de la classe du chapitre
+        chk(pg.is_visible('#v-accueil') and pg.evaluate("[...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch)") == [c for c in chaps if NIV[c] == NIV[ch]], '%s : l’adresse #%s doit montrer les chapitres de cette classe' % (ch, NIV[ch]))
         pg.click('#home-list .chap[data-ch="%s"]' % ch); pg.wait_for_timeout(100)
         chk(pg.is_visible('.tabbar'), ch + " : barre d'onglets absente dans le chapitre")
         for v in ['cours', 'exercices', 'entrainement', 'controle']:
@@ -855,6 +988,37 @@ with sync_playwright() as p:
             chk(vis == ['v-%s-%s' % (v, ch)], '%s onglet %s : vues visibles %s' % (ch, v, vis))
         pg.click('.tab[href="#accueil"]'); pg.wait_for_timeout(60)
         chk(pg.is_visible('#v-accueil') and pg.is_hidden('.tabbar'), ch + " : retour à l'accueil")
+        chk(pg.evaluate("document.querySelector('#home-niv [aria-pressed=\"true\"]').dataset.niv") == NIV[ch] and pg.query_selector('#home-list .chap[data-ch="%s"]' % ch) is not None, ch + ' : l’accueil doit rester sur la classe du chapitre quitté')
+    # une classe en français seulement le reste, quelle que soit la langue choisie en Seconde ; la langue de la Seconde n'est pas perdue
+    if MONO:
+        c3e = sorted(MONO)[0]; c2de = [c for c in chaps if c not in MONO][0]
+        pg.goto(URL + '#2de'); pg.wait_for_timeout(80); pg.click('.seg button[data-lang="it"]')
+        pg.goto(URL + '#' + c3e + '/cours'); pg.wait_for_timeout(120)
+        et = pg.evaluate("({ lang: document.documentElement.getAttribute('data-lang'), it: [...document.querySelectorAll('main .it')].filter(x => x.offsetParent).length, sous: document.querySelector('.brand-s').innerText })")
+        chk(et['lang'] == 'fr' and et['it'] == 0 and pg.is_hidden('.seg') and '3E' in et['sous'].upper(), '%s : un chapitre de 3e doit s’afficher en français, sans choix de langue (%s)' % (c3e, et))
+        pg.goto(URL + '#' + c2de + '/cours'); pg.wait_for_timeout(120)
+        et = pg.evaluate("({ lang: document.documentElement.getAttribute('data-lang'), sous: document.querySelector('.brand-s').innerText })")
+        chk(et['lang'] == 'it' and pg.is_visible('.seg') and 'SECONDE' in et['sous'].upper(), '%s : en revenant en Seconde on doit retrouver sa langue (%s)' % (c2de, et))
+        pg.click('.seg button[data-lang="both"]')
+        # une élève qui utilisait déjà l'application (un chapitre de Seconde ouvert, pas de classe enregistrée) reste en Seconde sans rien choisir
+        pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('evo-chap10-v1')); delete s.niv; localStorage.setItem('evo-chap10-v1', JSON.stringify(s)); })()")
+        pg.goto(URL + '#accueil'); pg.reload(); pg.wait_for_timeout(300)
+        et = pg.evaluate("({ choix: document.getElementById('v-accueil').classList.contains('choix'), chap: [...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch) })")
+        chk(not et['choix'] and et['chap'] == [c for c in chaps if NIV[c] == '2de'], 'une élève de Seconde déjà installée ne doit pas avoir à choisir sa classe (%s)' % et)
+        # même sans dernier chapitre ouvert : des données enregistrées avant l'arrivée des classes suffisent
+        pg.evaluate("(() => { const s = JSON.parse(localStorage.getItem('evo-chap10-v1')); delete s.niv; delete s.last; localStorage.setItem('evo-chap10-v1', JSON.stringify(s)); })()")
+        sauve = pg.evaluate("localStorage.getItem('evo-chap10-v1')")
+        pg.reload(); pg.wait_for_timeout(300)
+        et = pg.evaluate("({ choix: document.getElementById('v-accueil').classList.contains('choix'), chap: [...document.querySelectorAll('#home-list .chap')].map(a => a.dataset.ch) })")
+        chk(not et['choix'] and et['chap'] == [c for c in chaps if NIV[c] == '2de'], 'des données d’avant les classes : l’élève est en Seconde sans rien choisir (%s)' % et)
+        # au tout premier lancement, changer la langue avant de choisir sa classe ne choisit pas à sa place
+        pg.evaluate("localStorage.clear()"); pg.reload(); pg.wait_for_timeout(300)
+        pg.reload(); pg.wait_for_timeout(300)      # l'application fermée puis rouverte sans avoir choisi : la classe est encore demandée
+        chk(pg.evaluate("document.getElementById('v-accueil').classList.contains('choix')") and not pg.query_selector_all('#home-list .chap'), 'premier lancement, application rouverte sans avoir choisi : la classe doit encore être demandée')
+        pg.click('.seg button[data-lang="fr"]'); pg.reload(); pg.wait_for_timeout(300)
+        et = pg.evaluate("({ choix: document.getElementById('v-accueil').classList.contains('choix'), chap: document.querySelectorAll('#home-list .chap').length, lang: document.documentElement.getAttribute('data-lang') })")
+        chk(et['choix'] and et['chap'] == 0 and et['lang'] == 'fr', 'premier lancement, langue changée avant le choix de la classe : la classe doit encore être demandée (%s)' % et)
+        pg.evaluate("(s) => localStorage.setItem('evo-chap10-v1', s)", sauve); pg.reload(); pg.wait_for_timeout(300)
     # 4 bis. Le cours en pages : passage d'une partie à l'autre, reprise là où on s'était arrêté, fin du cours, liens vers le cours
     for ch in chaps:
         V = '#v-cours-' + ch
@@ -956,11 +1120,14 @@ with sync_playwright() as p:
         liste_exos(pg, V)
     # 5. Langues et débordement : accueil, chaque vue, chaque partie des cours en plusieurs pages
     for l in ['fr', 'it', 'both']:
+        pg.goto(URL + '#2de'); pg.wait_for_timeout(80)
         pg.click('.seg button[data-lang="%s"]' % l)
-        pg.goto(URL + '#accueil'); pg.wait_for_timeout(80)
-        ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
-        chk(ov <= 0, 'débordement %s accueil : %s' % (l, ov))
+        for k in niveaux:
+            pg.goto(URL + '#' + k); pg.wait_for_timeout(80)
+            ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
+            chk(ov <= 0, 'débordement %s accueil %s : %s' % (l, k, ov))
         for ch in chaps:
+            if ch in MONO and l != 'fr': continue
             for v in ['cours', 'exercices', 'entrainement', 'controle']:
                 pg.goto(URL + '#' + ch + '/' + v); pg.wait_for_timeout(80)
                 ov = pg.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
@@ -991,10 +1158,11 @@ with sync_playwright() as p:
             chk(ov <= 0, 'débordement %s %s, exercices : %s' % (l, ch, ov))
             # un contrôle blanc complet, page par page, dans cette langue
             controle_pages(pg, ch, l)
-    b.close()
+    navigateur.close()
 info.append('lignes de solution relues : %d, calculs d’explication relus : %d' % (compte['lignes'], compte['explications']))
 info.append('mise en forme contrôlée : %d calculs posés, %d formules' % (compte['calculs'], compte['formules']))
 info.append('pages tournées dans les trois langues : cours %d, exercices %d, contrôle blanc %d' % (compte['pages'], compte['pages_exos'], compte['pages_controle']))
+info.append('chapitres en français seulement : %s' % sorted(MONO))
 print('\n'.join(info))
 print('erreurs JS:', errs)
 print('ÉCHECS:', len(fails))

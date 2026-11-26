@@ -164,9 +164,47 @@ EXOS.push({
   de signe seul (pour le mettre devant une fraction). Exemple : `tpl: '= {±0}<i>x</i> {±1}'`, `ans: [6, -15]`.
   Options : `traps: [{ v: [6, -5], fr, it }]` (une erreur reconnue, `null` pour « n'importe quelle valeur »),
   `frac: [[0, 1]]` (les cases 0 et 1 forment une fraction : une fraction égale mais non simplifiée reçoit un message particulier),
+  `sci: [0, 1]` (les cases 0 et 1 forment une écriture scientifique, nombre puis exposant : le même nombre écrit autrement,
+  par exemple 45 × 10³ pour 4,5 × 10⁴, reçoit un message particulier),
   `set: true` (l'ordre des cases ne compte pas, pour les solutions d'une équation).
+- `kind: 'num'` avec `tol: 0` : la réponse est exacte (un entier, un décimal comme 0,004 05). Une erreur de `traps` n'est alors
+  reconnue que si elle est tapée exactement. `pm: true` ajoute un bouton ± à côté de la case ; `signMsg` remplace le message
+  donné quand seul le signe est faux.
 
 ### Liens entre le cours et les exercices
 
 Dans le cours, `<button type="button" class="go-b" data-exo="c3e14">` ouvre l'exercice ; `data-go="identifiant"` sur un lien ou un
 bouton mène à un endroit du cours (dans le chapitre concerné, quelle que soit la page affichée).
+
+## Compléments : chapitres en français seulement (3e)
+
+Modèle : `src/t01/exA.js`. Ce qui change :
+
+```
+EXOS.push({
+  ch: 't1', id: 't1e8',      // l'id commence par le chapitre ('t1e' + numéro ; 't1b1'... pour le contrôle blanc type brevet)
+  group: 'frac',             // un des groupes déclarés dans src/t01/chapitre.js et dans outils/validate.js
+  num: '8', src: 'fiche de révision',      // origine, jamais affichée
+  stars: 3,
+  title: 'Les paires piégées',
+  text: '<p>Ces calculs vont par deux et se ressemblent.<br>Pour chacun\u00a0: ...</p>',
+  parts: [ { kind: 'fill', q: '<p class="mq">...</p>', label: 'Complète les cases.', tpl: '= {s0}...', ans: [11, 12], frac: [[0, 1]],
+             traps: [{ v: [2, 3], fr: 'Tu as fait l’addition en premier\u00a0: c’est le calcul B.<br>Sans parenthèses, ...' }],
+             hint: '...', sol: '...' } ]
+});
+```
+
+- **Pas d'italien.** `title`, `tag`, `src`, `label`, `text`, `q`, `hint`, `sol`, les choix et les messages sont de simples chaînes ;
+  une erreur reconnue s'écrit `{ v, fr }`. Aucun passage `class="fr"` ni `class="it"`. Le chapitre est déclaré dans la liste
+  `MONO` de `outils/validate.js`.
+- **Une phrase par ligne.** Dans une consigne, un indice, un message ou un commentaire de solution, chaque phrase commence sur
+  sa ligne : `<br>` entre deux phrases (pas après un simple « Oui. »). En particulier « Règle : », « Attention : », « Méthode : »
+  et « Barème : » commencent toujours une ligne.
+- **Solution d'un calcul à plusieurs opérations.** Une étape par opération : `<p><b>En premier : la multiplication.</b><br>Règle : ...</p>`,
+  puis le calcul posé, le nom de l'expression recopié à chaque ligne comme sur une copie
+  (`<span class="cl"></span><span class="cg m"><i>A</i></span><span class="cd m">= ...</span>`), puis `<p><b>Ensuite : ...</b><br>Règle : ...</p>`.
+- **Ce que l'on calcule en premier est souligné** : `<span class="prem">3 × 4</span>` dans la première ligne du calcul posé.
+- **Erreurs reconnues.** Le message dit d'abord ce que l'élève a fait, puis la règle : « Tu as fait l'addition en premier. », à la
+  ligne « La multiplication passe avant l'addition. ». Pour une fraction (`frac`), donner l'erreur sous sa forme réduite et sous la
+  forme que l'élève écrit (par exemple 5/9 et 10/18).
+- Aucun prénom d'élève réel : « Lucas » (les calculs à corriger) est imaginaire.

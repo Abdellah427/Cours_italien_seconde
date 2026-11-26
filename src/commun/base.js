@@ -1,7 +1,9 @@
   'use strict';
   var NB = ' ', MI = '−', TIMES = '×', DIV = '÷', APPROX = '≈';
   var LS = 'evo-chap10-v1';
-  var store = (function(){ try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } })();
+  var NOUVEAU = true;      /* rien d'enregistré sur ce téléphone : tout premier lancement */
+  var store = (function(){ try { var brut = localStorage.getItem(LS); if (brut != null){ NOUVEAU = false; return JSON.parse(brut) || {}; } } catch (e) {} return {}; })();
+  if (NOUVEAU) store.niv = '';      /* la classe n'est pas encore choisie : elle sera demandée, même si l'application est fermée puis rouverte avant le choix */
   store.solved = store.solved || {};
   store.lang = store.lang || 'both';
   store.tr = store.tr || { streak: 0, best: 0, total: 0 };
@@ -21,12 +23,15 @@
       return s;
     }).join('');
   }
+  /* Un texte : { fr, it }. Dans un chapitre écrit en français seulement : { fr } ou une simple chaîne (l'italien n'est alors jamais affiché). */
+  function FR(o){ return typeof o === 'string' ? o : o.fr; }
+  function IT(o){ return typeof o === 'string' ? o : o.it == null ? o.fr : o.it; }
   function bi(o, tag, cls){
     tag = tag || 'div';
     var c = cls ? ' ' + cls : '';
-    return '<' + tag + ' class="fr' + c + '">' + typo(o.fr, true) + '</' + tag + '><' + tag + ' class="it' + c + '">' + typo(o.it, false) + '</' + tag + '>';
+    return '<' + tag + ' class="fr' + c + '">' + typo(FR(o), true) + '</' + tag + '><' + tag + ' class="it' + c + '">' + typo(IT(o), false) + '</' + tag + '>';
   }
-  function biIn(o){ return '<span class="fr">' + typo(o.fr, true) + '</span><span class="it inl">' + typo(o.it, false) + '</span>'; }
+  function biIn(o){ return '<span class="fr">' + typo(FR(o), true) + '</span><span class="it inl">' + typo(IT(o), false) + '</span>'; }
   function biUI(fr, it){ return '<span class="ui"><span class="fr">' + fr + '</span><span class="it">' + it + '</span></span>'; }
 
   /* Nombres à la française */
@@ -40,13 +45,28 @@
   function sgn(n, d){ return (rd(n, d == null ? 2 : d) > 0 ? '+' : '') + num(n, d); }
   function exact(n, d){ var p = Math.pow(10, d); return Math.abs(n * p - Math.round(n * p)) < 1e-7; }
 
-  /* Langue */
+  /* Niveaux : chaque élève ne voit que les chapitres de sa classe. La 3e est écrite en français seulement (mono) : le choix de la langue disparaît. */
+  var NIVEAUX = [{ k: '2de', nom: 'Seconde' }, { k: '3e', nom: '3e', mono: true }];
+  function nivDe(c){ return c.niv || '2de'; }
+  function niv(){ for (var i = 0; i < NIVEAUX.length; i++) if (NIVEAUX[i].k === store.niv) return NIVEAUX[i]; return null; }
+  /* Langue affichée : celle choisie, sauf dans un niveau écrit en français seulement */
+  function langue(){ var n = niv(); return n && n.mono ? 'fr' : store.lang; }
+  function appliqueLangue(){
+    var l = langue(), n = niv(), de = document.documentElement, avant = de.getAttribute('data-lang');
+    de.setAttribute('data-lang', l);
+    de.lang = l === 'it' ? 'it' : 'fr';
+    de.classList.toggle('mono', !!(n && n.mono));
+    $$('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === store.lang)); });
+    return avant !== l;
+  }
   function setLang(l){
     store.lang = l; save();
-    document.documentElement.setAttribute('data-lang', l);
-    document.documentElement.lang = l === 'it' ? 'it' : 'fr';
-    $$('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === l)); });
+    appliqueLangue();
     document.dispatchEvent(new Event('langchange'));
+  }
+  function setNiv(k){
+    if (store.niv !== k){ store.niv = k; save(); }
+    if (appliqueLangue()) document.dispatchEvent(new Event('langchange'));
   }
   $$('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setLang(b.dataset.lang); }); });
 
@@ -58,7 +78,7 @@
     }).join('');
   }
   function chainSVG(spec){
-    var lang = store.lang === 'it' ? 'it' : 'fr';
+    var lang = langue() === 'it' ? 'it' : 'fr';
     var nodes = spec.nodes.map(String), n = nodes.length, ops = spec.ops || [], tones = spec.tones || [];
     var hasTop = !!(spec.top && spec.top.length), b = spec.bottom;
     var ws = nodes.map(function(t){ return Math.max(46, t.length * 9.5 + 24); });

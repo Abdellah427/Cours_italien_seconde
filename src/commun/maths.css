@@ -21,6 +21,9 @@ b .m,.m b{font-weight:600}
 /* les flèches d'équivalence ne sont pas dans la police des formules : une police du téléphone qui les dessine bien */
 .ar,.calc > .cl.eqv{font-family:"STIX Two Math","Apple Symbols","Cambria Math","Segoe UI Symbol","Noto Sans Math","DejaVu Sans",var(--f-math);font-weight:400;font-style:normal}
 .bp{font-size:1.7em;line-height:0;vertical-align:-.14em;font-weight:400}
+/* ce que l'on calcule en premier : souligné, comme sur la copie */
+.prem{display:inline-block;border-bottom:2px solid var(--brand);padding:0 1px 1px;line-height:1.25}
+.prem .frac{margin-bottom:.12em}
 .m sup,.m sub,.md sup,.md sub{font-size:.72em}
 .k1{color:var(--k1);font-weight:600}.k2{color:var(--k2);font-weight:600}.k3{color:var(--k3);font-weight:600}
 .m s{text-decoration-color:var(--down);text-decoration-thickness:2px}

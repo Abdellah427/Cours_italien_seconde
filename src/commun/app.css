@@ -359,6 +359,16 @@ html[data-lang="both"] .chap-s .it{display:block;color:var(--owl-dark)}
 .chap-go{color:var(--blue);display:grid}
 .chap-go svg{width:22px;height:22px}
 .resume{width:100%;justify-content:space-between;margin:14px 0 2px;text-decoration:none;min-height:54px;text-align:left}
+/* La classe : deux boutons en haut de l'accueil. Au premier lancement, ils sont seuls à l'écran. */
+.nivs{display:flex;gap:8px;margin:12px 0 2px}
+.nivs .chip{flex:1 1 0;min-height:44px;font-family:var(--f-display);font-size:.98rem}
+.h-choix{display:none}
+#v-accueil.choix .h-chap,#v-accueil.choix #home-resume,#v-accueil.choix .foot,#v-accueil.choix .coach{display:none}
+#v-accueil.choix .h-choix{display:inline}
+#v-accueil.choix .nivs{display:grid;gap:12px;margin-top:18px}
+#v-accueil.choix .nivs .chip{min-height:76px;font-size:1.35rem;border-radius:22px;box-shadow:var(--shadow)}
+/* une classe écrite en français seulement : pas de choix de langue */
+html.mono .seg{display:none}
 .resume svg{flex:none}
 
 /* Cinq onglets : Accueil, puis les quatre vues du chapitre */

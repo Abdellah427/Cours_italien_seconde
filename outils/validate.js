@@ -12,13 +12,19 @@ for (const f of files) {
   catch (e) { problems.push(f + ' : erreur JavaScript : ' + e.message); }
 }
 const EX = ctx.EXOS;
-// Groupes d'exercices de chaque chapitre (les mêmes que dans src/chNN/chapitre.js)
+// Groupes d'exercices de chaque chapitre (les mêmes que dans le fichier chapitre.js du chapitre)
 const GROUPS = {
   c10: ['rappels', 'succ', 'recip', 'synth'],
-  c3: ['cahier', 'calc', 'rac', 'expr', 'eq', 'ineq', 'dem', 'eval']
+  c3: ['cahier', 'calc', 'rac', 'expr', 'eq', 'ineq', 'dem', 'eval'],
+  t1: ['prio', 'frac', 'puis', 'brevet']
 };
+// Chapitres écrits en français seulement (classe de 3e) : un texte est une simple chaîne (ou { fr }), sans italien
+const MONO = ['t1'];
 const ids = new Set();
-const isBi = (o) => o && typeof o === 'object' && typeof o.fr === 'string' && typeof o.it === 'string' && o.fr.trim() && o.it.trim();
+const isBi2 = (o) => o && typeof o === 'object' && typeof o.fr === 'string' && typeof o.it === 'string' && o.fr.trim() && o.it.trim();
+const isFr = (o) => (typeof o === 'string' && o.trim() !== '') || !!(o && typeof o === 'object' && typeof o.fr === 'string' && o.fr.trim() && o.it == null);
+let mono = false;      // le chapitre de l'exercice en cours de vérification est-il en français seulement ?
+const isBi = (o) => mono ? isFr(o) : isBi2(o);
 // Un texte : { fr, it }, ou du HTML déjà balisé (.fr / .it) quand les calculs ne s'écrivent qu'une fois
 const isText = (o) => isBi(o) || (typeof o === 'string' && o.trim() !== '');
 const count = (s, re) => (s.match(re) || []).length;
@@ -57,12 +63,14 @@ EX.forEach((e, i) => {
   if (!e || typeof e !== 'object') { problems.push(w + ' : pas un objet'); return; }
   const ch = e.ch || 'c10';
   if (!GROUPS[ch]) { problems.push(w + ' : chapitre inconnu « ' + ch + ' » (à déclarer dans outils/validate.js)'); return; }
+  mono = MONO.includes(ch);
+  if (mono && /class="it[ "]/.test(JSON.stringify(e))) problems.push(w + ' : chapitre en français seulement, pas de passage class="it"');
   if (!/^[a-z0-9]+$/.test(e.id || '')) problems.push(w + ' : id invalide');
   if (ch !== 'c10' && !String(e.id).startsWith(ch)) problems.push(w + ' : l’id doit commencer par « ' + ch + ' » pour rester unique entre les chapitres');
   if (ids.has(e.id)) problems.push(w + ' : id en double'); ids.add(e.id);
   if (!GROUPS[ch].includes(e.group)) problems.push(w + ' : group invalide');
   if (typeof e.num !== 'string' || !e.num) problems.push(w + ' : num doit être un texte');
-  if (e.page != null ? typeof e.page !== 'number' : !isBi(e.src)) problems.push(w + ' : page (nombre) ou src {fr, it} manquant');
+  if (e.page != null ? typeof e.page !== 'number' : !isBi(e.src)) problems.push(w + ' : page (nombre) ou src (origine de l’exercice) manquant');
   if (ch === 'c10' ? ![1, 2, 3].includes(e.stars) : (e.stars != null && ![1, 2, 3].includes(e.stars))) problems.push(w + ' : stars doit valoir 1, 2 ou 3');
   if (e.tag && !isBi(e.tag)) problems.push(w + ' : tag doit être {fr, it}');
   if (!isBi(e.title)) problems.push(w + ' : title {fr, it} manquant');
@@ -91,7 +99,7 @@ EX.forEach((e, i) => {
       if (p.near != null && (typeof p.near !== 'number' || p.near < p.tol)) problems.push(pw + ' : near invalide');
       if (!['strict', 'abs'].includes(p.sign)) problems.push(pw + ' : sign doit valoir strict ou abs');
       (p.traps || []).forEach((t, k) => {
-        if (typeof t.v !== 'number' || !t.fr || !t.it) problems.push(pw + ' : trap ' + k + ' invalide');
+        if (typeof t.v !== 'number' || !t.fr || (!mono && !t.it)) problems.push(pw + ' : trap ' + k + ' invalide');
         if (typeof t.v === 'number' && Math.abs(t.v - p.ans) <= p.tol) problems.push(pw + ' : trap ' + k + ' égal à la bonne réponse');
       });
     } else if (p.kind === 'fill') {
@@ -102,7 +110,17 @@ EX.forEach((e, i) => {
         if (!new RegExp('\\{±?' + k + '\\}').test(p.tpl)) problems.push(pw + ' : la case {' + k + '} manque dans tpl');
         if (a < 0 && !new RegExp('\\{(s|±)' + k + '\\}').test(p.tpl)) problems.push(pw + ' : la case ' + k + ' attend un nombre négatif, il lui faut un signe {±' + k + '} ou {s' + k + '}');
       });
-      (p.traps || []).forEach((t, k) => { if (!Array.isArray(t.v) || !t.fr || !t.it) problems.push(pw + ' : trap ' + k + ' invalide'); });
+      const n = Array.isArray(p.ans) ? p.ans.length : 0, caseOk = (k) => Number.isInteger(k) && k >= 0 && k < n;
+      (p.traps || []).forEach((t, k) => {
+        if (!Array.isArray(t.v) || !t.fr || (!mono && !t.it)) problems.push(pw + ' : trap ' + k + ' invalide');
+        else if (t.v.length !== n || !t.v.every((x) => x === null || (typeof x === 'number' && isFinite(x)))) problems.push(pw + ' : trap ' + k + ' : une valeur (ou null) par case');
+        else if (t.v.every((x, i) => x === null || x === p.ans[i])) problems.push(pw + ' : trap ' + k + ' égal à la bonne réponse');
+      });
+      if (p.frac != null && !(Array.isArray(p.frac) && p.frac.every((f) => Array.isArray(f) && f.length === 2 && f.every(caseOk)))) problems.push(pw + ' : frac doit être une liste de paires de cases [numérateur, dénominateur]');
+      if (p.sci != null) {
+        if (!(Array.isArray(p.sci) && p.sci.length === 2 && p.sci.every(caseOk))) problems.push(pw + ' : sci doit désigner deux cases [nombre, exposant]');
+        else if (!(Math.abs(p.ans[p.sci[0]]) >= 1 && Math.abs(p.ans[p.sci[0]]) < 10 && Number.isInteger(p.ans[p.sci[1]]))) problems.push(pw + ' : sci : la réponse n’est pas une écriture scientifique');
+      }
     } else if (p.kind === 'choice') {
       if (!isText(p.q)) problems.push(pw + ' : q manquant');
       if (!Array.isArray(p.choices) || p.choices.length < 2 || p.choices.length > 4 || !p.choices.every(isText)) problems.push(pw + ' : choices doit avoir 2 à 4 éléments');

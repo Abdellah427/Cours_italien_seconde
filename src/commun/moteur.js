@@ -4,7 +4,7 @@
   function pk(e, j){ return e.id + ':' + j; }
   function nDone(e){ var c = 0; e.parts.forEach(function(p, j){ if (store.solved[pk(e, j)]) c++; }); return c; }
   function isDone(e){ return nDone(e) === e.parts.length; }
-  function curLang(){ return store.lang === 'it' ? 'it' : 'fr'; }
+  function curLang(){ return langue() === 'it' ? 'it' : 'fr'; }
   var mainEl = $('main');
   function mkView(kind, c, html){
     var s = document.createElement('section');
@@ -13,9 +13,9 @@
     return s;
   }
   function vhead(eyebrow, title, lead){
-    return '<div class="vhead"><p class="eyebrow">' + biIn(eyebrow) + '</p><h1><span class="fr">' + title.fr + '</span><span class="it sub-it">' + title.it + '</span></h1>' + bi(lead, 'p', 'lead') + '</div>';
+    return '<div class="vhead"><p class="eyebrow">' + biIn(eyebrow) + '</p><h1><span class="fr">' + FR(title) + '</span><span class="it sub-it">' + IT(title) + '</span></h1>' + bi(lead, 'p', 'lead') + '</div>';
   }
-  function chip(attr, k, label, on){ return '<button class="chip" type="button" data-' + attr + '="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '"><span class="fr">' + label.fr + '</span><span class="it">' + label.it + '</span></button>'; }
+  function chip(attr, k, label, on){ return '<button class="chip" type="button" data-' + attr + '="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '"><span class="fr">' + FR(label) + '</span><span class="it">' + IT(label) + '</span></button>'; }
   function press(list, on){ list.forEach(function(x){ x.setAttribute('aria-pressed', String(x === on)); }); }
 
   /* Vues en pages : la barre qui se remplit en haut, les boutons Précédent / Suivant en bas */
@@ -129,7 +129,7 @@
       var e = liste[k], num = $('.ex-num', exHead), fin = k === liste.length - 1 && xPage === XL.pages.length - 1;
       /* en haut : le numéro (vert quand l'exercice est réussi) et le titre de l'exercice */
       num.textContent = e.n; num.className = 'exo-n ex-num' + (e.plus ? ' plus' : '') + (isDone(e) ? ' done' : '');
-      $('.ex-where', exHead).innerHTML = '<span class="fr">' + typo(e.title.fr, true) + '</span><span class="it">' + typo(e.title.it, false) + '</span>';
+      $('.ex-where', exHead).innerHTML = '<span class="fr">' + typo(FR(e.title), true) + '</span><span class="it">' + typo(IT(e.title), false) + '</span>';
       setBar(exHead, (k + (xPage + 1) / XL.pages.length) / liste.length * 100);      /* la barre avance d'un cran à chaque page de l'exercice */
       $('.pg-count', exNav).textContent = (k + 1) + ' / ' + liste.length;
       $('.pg-prev', exNav).disabled = k === 0 && xPage === 0;
@@ -214,7 +214,7 @@
     function cardHead(e){
       var L = curLang(), bits = [], nq = e.parts.length;
       if (e.stars) bits.push('<span class="stars" aria-label="' + e.stars + ' / 3">' + starStr(e.stars) + '</span>');
-      if (e.tag) bits.push(esc(e.tag[L]));
+      if (e.tag) bits.push(esc(L === 'it' ? IT(e.tag) : FR(e.tag)));
       if (nq > 1) bits.push(nq + (L === 'it' ? ' domande' : ' questions'));
       return '<button class="exo-h" type="button" aria-expanded="' + (opened[e.id] ? 'true' : 'false') + '"><span class="exo-n' + (e.plus ? ' plus' : '') + '">' + e.n + '</span>' +
         '<span><span class="exo-t">' + biIn(e.title) + '</span><span class="exo-m">' + bits.join(' · ') + '</span></span><span class="exo-s" aria-hidden="true">✓</span></button>';
@@ -432,7 +432,7 @@
       var h = '<div class="test-intro">' + bi({ fr: '10 questions, une seule bonne réponse par question, 2 points chacune. Réponds à tout, puis corrige.', it: '10 domande, una sola risposta giusta per domanda, 2 punti ciascuna. Rispondi a tutto, poi correggi.' }, 'p') + '<p class="best test-best"></p></div>';
       testQs.forEach(function(q, i){
         var qn = '<span class="qn">' + (i + 1) + '.</span> ';
-        h += '<div class="tq" data-i="' + i + '"><div class="qtext">' + bi({ fr: qn + q.fr, it: qn + q.it }) + '</div><div class="choices">' +
+        h += '<div class="tq" data-i="' + i + '"><div class="qtext">' + bi({ fr: qn + q.fr, it: qn + (q.it == null ? q.fr : q.it) }) + '</div><div class="choices">' +
           q.list.map(function(o, k){ return '<button class="choice" type="button" data-k="' + k + '" aria-pressed="false"><span class="k">' + 'abcd'.charAt(k) + '</span>' + optHTML(o) + '</button>'; }).join('') +
           '</div><div class="fbw"></div></div>';
       });
@@ -470,12 +470,12 @@
           x.disabled = true; x.classList.remove('sel');
           if (k === q.ok) x.classList.add('ok'); else if (k === q.pick) x.classList.add('ko');
         });
-        $('.fbw', div).innerHTML = '<p class="fb ' + (good ? 'ok' : 'ko') + '">' + biIn(good ? { fr: 'Juste : +2 points.', it: 'Giusto: +2 punti.' } : q.pick < 0 ? { fr: 'Pas de réponse.', it: 'Nessuna risposta.' } : { fr: 'Faux.', it: 'Sbagliato.' }) + '</p><div class="panel">' + bi({ fr: '<p>' + q.exp.fr + '</p>', it: '<p>' + q.exp.it + '</p>' }) + (q.exp.calc || '') + '</div>';
+        $('.fbw', div).innerHTML = '<p class="fb ' + (good ? 'ok' : 'ko') + '">' + biIn(good ? { fr: 'Juste : +2 points.', it: 'Giusto: +2 punti.' } : q.pick < 0 ? { fr: 'Pas de réponse.', it: 'Nessuna risposta.' } : { fr: 'Faux.', it: 'Sbagliato.' }) + '</p><div class="panel">' + bi({ fr: '<p>' + FR(q.exp) + '</p>', it: '<p>' + IT(q.exp) + '</p>' }) + (q.exp.calc || '') + '</div>';
       });
       if (st.bestTest == null || score > st.bestTest){ st.bestTest = score; save(); }
       var msg = score === 20 ? { fr: 'Parfait ! Tu maîtrises le chapitre.', it: 'Perfetto! Sai bene il capitolo.' } : score >= 14 ? { fr: 'Très bien ! Lis les corrections, puis refais un contrôle.', it: 'Molto bene! Leggi le correzioni, poi rifai una verifica.' } : score >= 10 ? { fr: 'Bien ! Pour les questions ratées, relis le cours.', it: 'Bene! Per le domande sbagliate, rileggi la lezione.' } : c.low;
       /* le résultat d'abord, puis les questions corrigées, page par page */
-      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(msg.fr, true) + '</span><span class="it">' + msg.it + '</span></div></div></div>' +
+      $('.test-res', testBox).innerHTML = '<div class="score"><span class="big">' + score + ' / 20</span>' + '<div class="coach" data-owl-host><div class="owl-slot test-owl"></div><div class="bubble"><span class="fr">' + typo(FR(msg), true) + '</span><span class="it">' + IT(msg) + '</span></div></div></div>' +
         '<p class="t-aide ui"><span class="fr">Touche un numéro pour voir sa correction.</span><span class="it">Tocca un numero per vedere la correzione.</span></p>' + nums() +
         '<div class="tools"><button class="btn pri test-new" type="button">' + biUI('Nouveau contrôle', 'Nuova verifica') + ICON_NEXT + '</button></div>';
       $('.test-go', testBox).disabled = true;
@@ -595,7 +595,7 @@
     vCo.appendChild(pgNav);
     vCo.classList.add('pg');
     /* Ce dont dépend le découpage : la langue affichée, la largeur de l'écran et la hauteur disponible pour une page */
-    function pgKey(L){ return store.lang + '|' + window.innerWidth + '|' + Math.round(budget(L.el) / 16); }
+    function pgKey(L){ return langue() + '|' + window.innerWidth + '|' + Math.round(budget(L.el) / 16); }
     /* Hauteur disponible pour une page : de la barre de progression jusqu'aux boutons du bas */
     function budget(l){
       var top = l.getBoundingClientRect().top + window.pageYOffset;
@@ -798,14 +798,23 @@
   CHAPS.forEach(function(c){ CH[c.id] = makeChapter(c); });
   window.scolairOccupe = function(){ return CHAPS.some(function(c){ return CH[c.id].busy(); }); };
   var VNAME = { cours: { fr: 'le cours', it: 'la lezione' }, exercices: { fr: 'les exercices', it: 'gli esercizi' }, entrainement: { fr: 'l’entraînement', it: 'l’allenamento' }, controle: { fr: 'le contrôle blanc', it: 'la verifica di prova' } };
+  /* La classe : celle déjà choisie. Sinon, pour une élève qui utilisait déjà l'application (des données sur son téléphone, sans classe :
+     elles datent d'avant les classes), celle du dernier chapitre ouvert, à défaut la première. Au tout premier lancement, on la demande. */
+  if (!niv()){
+    if (store.last && CH[store.last.ch]) store.niv = nivDe(CH[store.last.ch].c);
+    else if (store.niv == null) store.niv = NIVEAUX[0].k;
+  }
   function renderHome(){
-    var h = '';
-    CHAPS.forEach(function(c, i){
-      var s = CH[c.id].stats(), pct = s.total ? Math.round(s.done / s.total * 100) : 0, last = i === CHAPS.length - 1 && CHAPS.length > 1;
+    var h = '', n = niv(), liste = CHAPS.filter(function(c){ return n && nivDe(c) === n.k; });
+    $('#home-niv').innerHTML = NIVEAUX.map(function(x){ return '<button class="chip" type="button" data-niv="' + x.k + '" aria-pressed="' + (!!n && n.k === x.k) + '">' + x.nom + '</button>'; }).join('');
+    document.getElementById('v-accueil').classList.toggle('choix', !n);      /* premier lancement : on choisit d'abord sa classe */
+    $('#home-eyebrow').textContent = 'Maths' + (n ? ' · ' + n.nom : '');
+    liste.forEach(function(c, i){
+      var s = CH[c.id].stats(), pct = s.total ? Math.round(s.done / s.total * 100) : 0, last = i === liste.length - 1 && liste.length > 1;
       h += '<a class="chap" href="#' + c.id + '/' + (CH[c.id].st.v || 'cours') + '" data-ch="' + c.id + '"><span class="chap-n">' + c.sym + '</span><span class="chap-b">' +
         (last ? '<span class="chap-k ui"><span class="chap-new"><span class="fr">Nouveau</span><span class="it">Nuovo</span></span></span>' : '') +
-        '<span class="chap-t"><span class="fr">' + c.title.fr + '</span><span class="it sub-it">' + c.title.it + '</span></span>' +
-        '<span class="chap-s"><span class="fr">' + typo(c.sub.fr, true) + '</span><span class="it">' + c.sub.it + '</span></span>' +
+        '<span class="chap-t"><span class="fr">' + FR(c.title) + '</span><span class="it sub-it">' + IT(c.title) + '</span></span>' +
+        '<span class="chap-s"><span class="fr">' + typo(FR(c.sub), true) + '</span><span class="it">' + IT(c.sub) + '</span></span>' +
         '<span class="prog"><i style="width:' + pct + '%"></i></span>' +
         '<span class="chap-m ui"><span><b>' + s.done + '</b> / ' + s.total + ' <span class="fr">exercices</span><span class="it">esercizi</span></span>' +
         '<span><span class="fr">série</span><span class="it">serie</span> <b>' + s.best + '</b></span>' +
@@ -814,19 +823,28 @@
     });
     $('#home-list').innerHTML = h;
     var r = $('#home-resume'), l = store.last;
-    if (l && CH[l.ch] && VIEWS.indexOf(l.v) >= 0){
+    if (l && CH[l.ch] && VIEWS.indexOf(l.v) >= 0 && n && nivDe(CH[l.ch].c) === n.k){
       var c = CH[l.ch].c;
-      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + c.short.fr + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + c.short.it + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
+      r.innerHTML = '<a class="btn pri resume" href="#' + l.ch + '/' + l.v + '"><span class="ui"><span class="fr">' + typo('Reprendre : ' + FR(c.short) + ', ' + VNAME[l.v].fr, true) + '</span><span class="it">Riprendi: ' + IT(c.short) + ', ' + VNAME[l.v].it + '</span></span>' + ICON_NEXT + '</a>';
     } else r.innerHTML = '';
   }
+  /* Changer de classe sur l'accueil */
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest ? ev.target.closest('[data-niv]') : null;
+    if (!b) return;
+    setNiv(b.getAttribute('data-niv'));
+    if (!cur.ch) route();
+  });
 
   var cur = { ch: null, v: 'accueil' }, scrolls = {}, pending = null, started = false;
   function keyOf(r){ return r.ch ? r.ch + '/' + r.v : 'accueil'; }
   function parseHash(){
     var h = (location.hash || '').replace(/^#\/?/, '');
     if (VIEWS.indexOf(h) >= 0 && CH.c10) return { ch: 'c10', v: h };
-    var m = /^(c\d+)\/([a-z]+)$/.exec(h);
+    var m = /^([ct]\d+)\/([a-z]+)$/.exec(h);
     if (m && CH[m[1]] && VIEWS.indexOf(m[2]) >= 0) return { ch: m[1], v: m[2] };
+    /* #3e, #2de : l'accueil d'une classe (le lien à donner à une élève) */
+    if (NIVEAUX.some(function(x){ return x.k === h; })) return { ch: null, v: 'accueil', niv: h };
     return { ch: null, v: 'accueil' };
   }
   function route(){
@@ -835,6 +853,7 @@
     started = true; cur = r;
     $$('main > .view').forEach(function(s){ s.hidden = true; });
     var home = !r.ch, ch = home ? null : CH[r.ch];
+    if (!home) setNiv(nivDe(ch.c)); else if (r.niv) setNiv(r.niv); else appliqueLangue();      /* la classe suit le chapitre affiché */
     document.body.classList.toggle('at-home', home);
     document.documentElement.classList.remove('plein');      /* remis par la vue des exercices quand un exercice y est ouvert */
     if (home){ renderHome(); document.getElementById('v-accueil').hidden = false; }
@@ -849,8 +868,9 @@
         if (v === r.v) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
       });
     }
-    $('.brand-t').innerHTML = home ? 'SCOLAIR' : '<span class="fr">' + ch.c.short.fr + '</span><span class="it">' + ch.c.short.it + '</span>';
-    $('.brand-s').innerHTML = home ? '<span class="fr">Maths · Seconde</span><span class="it">Matematica · Seconde</span>' : 'SCOLAIR · Seconde';
+    var cl = niv() ? ' · ' + niv().nom : '';
+    $('.brand-t').innerHTML = home ? 'SCOLAIR' : '<span class="fr">' + FR(ch.c.short) + '</span><span class="it">' + IT(ch.c.short) + '</span>';
+    $('.brand-s').innerHTML = home ? '<span class="fr">Maths' + cl + '</span><span class="it">Matematica' + cl + '</span>' : 'SCOLAIR' + cl;
     owlChapter(ch ? ch.c : null);
     setAbh();
     if (pending){ var f = pending; pending = null; f(); }

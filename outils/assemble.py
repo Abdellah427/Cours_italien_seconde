@@ -4,13 +4,15 @@ import hashlib, os, re, shutil
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def r(*n): return open(os.path.join(R, 'src', *n), encoding='utf-8').read()
 
-# Les chapitres, dans l'ordre de l'écran d'accueil. Pour en ajouter un : un dossier src/chNN/ et une ligne ici.
+# Les chapitres, dans l'ordre de l'écran d'accueil. Pour en ajouter un : un dossier src/chNN/ (Seconde) ou src/tNN/ (3e) et une ligne ici.
+# La classe d'un chapitre se déclare dans son chapitre.js (niv: '3e' ; sans rien : la Seconde).
 CHAPITRES = [
     {'dossier': 'ch10', 'cours': ['cours1.html', 'cours2.html'], 'exercices': ['ex_sample.js', 'exA.js', 'exB.js']},
     {'dossier': 'ch03', 'cours': ['cours1.html', 'cours2.html', 'cours3.html'], 'exercices': ['exA.js', 'exB.js']},
+    {'dossier': 't01', 'cours': ['cours1.html'], 'exercices': ['exA.js', 'exB.js']},      # 3e : calculs
 ]
 CHAPITRES = [c for c in CHAPITRES if os.path.isfile(os.path.join(R, 'src', c['dossier'], 'chapitre.js'))]
-TITRE = 'SCOLAIR : maths de Seconde avec Hector'
+TITRE = 'SCOLAIR : maths avec Hector'
 
 css = '\n'.join(r('commun', f) for f in ['app.css', 'chouette.css', 'scolair.css', 'maths.css'])
 # Texte fixe : espace insécable avant la ponctuation haute, après « et entre les groupes de trois chiffres

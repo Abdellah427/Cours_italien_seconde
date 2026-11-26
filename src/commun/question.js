@@ -22,7 +22,8 @@
     if (Math.abs(v - p.ans) <= tol) return 'ok';
     if (p.sign === 'abs' && Math.abs(Math.abs(v) - Math.abs(p.ans)) <= tol) return 'ok';
     var traps = p.traps || [];
-    for (var i = 0; i < traps.length; i++){ var d = p.sign === 'abs' ? Math.abs(Math.abs(v) - Math.abs(traps[i].v)) : Math.abs(v - traps[i].v); if (d <= Math.max(p.tol, 0.006) + 1e-9) return { trap: traps[i] }; }
+    var tt = p.tol ? Math.max(p.tol, 0.006) : 0;      /* réponse exacte attendue : un piège n'est reconnu que s'il est tapé exactement */
+    for (var i = 0; i < traps.length; i++){ var d = p.sign === 'abs' ? Math.abs(Math.abs(v) - Math.abs(traps[i].v)) : Math.abs(v - traps[i].v); if (d <= tt + 1e-9) return { trap: traps[i] }; }
     if (p.sign === 'strict' && Math.abs(-v - p.ans) <= tol) return p.unit !== '%' && p.ans > 0 ? 'nominus' : 'sign';
     var near = (p.near != null ? p.near : 10 * p.tol) + 1e-9;
     if (Math.abs(v - p.ans) <= near || (p.sign === 'abs' && Math.abs(Math.abs(v) - Math.abs(p.ans)) <= near)) return 'near';
@@ -58,6 +59,7 @@
     fpart: { fr: 'Pas encore. Les cases vertes sont justes : corrige les cases rouges.', it: 'Non ancora. Le caselle verdi sono giuste: correggi quelle rosse.' },
     firr: { fr: 'Presque : c’est bien égal, mais la fraction n’est pas irréductible. Simplifie-la.', it: 'Quasi: è uguale, ma la frazione non è ridotta ai minimi termini. Semplificala.' },
     fzero: { fr: 'Un dénominateur ne peut pas être égal à 0.', it: 'Un denominatore non può essere uguale a 0.' },
+    fsci: { fr: 'Presque : le nombre est bon, mais ce n’est pas l’écriture scientifique. Le premier facteur doit être entre 1 et 10 (10 exclu).', it: 'Quasi: il numero è giusto, ma non è la notazione scientifica. Il primo fattore deve essere tra 1 e 10 (10 escluso).' },
     selfok: { fr: 'Bravo, exercice réussi !', it: 'Brava, esercizio riuscito!' },
     selfko: { fr: 'Ce n’est pas grave : on apprend en corrigeant ses erreurs. Relis la solution, cache-la, puis refais l’exercice sur ton cahier.', it: 'Non fa niente: si impara correggendo gli errori. Rileggi la soluzione, nascondila, poi rifai l’esercizio sul quaderno.' }
   };
@@ -102,6 +104,11 @@
       if (Math.abs(vals[b]) < 1e-12) return { r: 'mid', msg: MSG.fzero };
       var others = okv.every(function(v, k){ return v || k === a || k === b; });
       if (others && (!okv[a] || !okv[b]) && Math.abs(vals[a] * p.ans[b] - p.ans[a] * vals[b]) < 1e-9) return { r: 'mid', msg: MSG.firr };
+    }
+    /* sci : [a, n], les cases d'une écriture scientifique a × 10^n. Le même nombre écrit autrement reçoit un message particulier. */
+    if (p.sci){
+      var m = p.sci[0], x = p.sci[1], bon = p.ans[m] * Math.pow(10, p.ans[x]);
+      if (vals[x] === Math.round(vals[x]) && Math.abs(vals[x]) < 40 && Math.abs(vals[m] * Math.pow(10, vals[x]) - bon) <= Math.abs(bon) * 1e-9) return { r: 'mid', msg: MSG.fsci };
     }
     var traps = p.traps || [];
     for (i = 0; i < traps.length; i++){
