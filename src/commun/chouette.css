@@ -338,8 +338,6 @@
 /* ----- Tenues et danses à débloquer ----- */
 .owl.acc-bow .owl-acc-bow, .owl.acc-shades .owl-acc-shades, .owl.acc-crown .owl-acc-crown { display: inline; }
 .owl .owl-acc-crown { transform-origin: 410px 60px; }
-/* le crayon derrière l'oreille : un peu plus grand, pour qu'on le voie aussi sur le petit Hector de la barre du haut */
-.owl .owl-acc-pencil { transform-origin: 108px 78px; transform: translate(-46px, -52px) scale(1.45); }
 /* La toupie : deux tours sur soi-même, puis un petit saut */
 .owl.a-toupie .owl-all { transform-origin: 410px 480px; animation: owl-toupie 1.8s cubic-bezier(.45, 0, .3, 1); }
 @keyframes owl-toupie { 0% { transform: none; } 70% { transform: rotate(720deg); } 84% { transform: rotate(720deg) translateY(-80px); } 100% { transform: rotate(720deg); } }

@@ -59,12 +59,11 @@ L'élève travaille seule avec l'application, sans le manuel à côté. Le livre
 
 ## Les tenues et les danses d'Hector
 
-En travaillant, l'élève gagne dix récompenses pour Hector : six tenues (des accessoires qu'il porte partout dans l'application) et quatre danses. Sur l'accueil, sous Hector, un bouton mène à la vue où on les regarde, où on essaie une tenue, où on la met et où on le fait danser. Quand une récompense est gagnée pendant le travail, Hector l'annonce dans une bulle.
+En travaillant, l'élève gagne neuf récompenses pour Hector : cinq tenues (des accessoires qu'il porte partout dans l'application) et quatre danses. Sur l'accueil, sous Hector, un bouton mène à la vue où on les regarde, où on essaie une tenue, où on la met et où on le fait danser. Quand une récompense est gagnée pendant le travail, Hector l'annonce dans une bulle.
 
 | Récompense | Ce qu'il faut faire |
 | --- | --- |
-| Le crayon | 5 questions réussies dans les exercices |
-| L'écharpe | 15 questions réussies dans les exercices |
+| L'écharpe | 5 questions réussies dans les exercices |
 | Le nœud papillon | 30 questions réussies dans les exercices |
 | Les lunettes de soleil | 5 questions réussies de suite à l'entraînement |
 | La toque | 10 / 20 ou plus à un contrôle blanc |

@@ -760,9 +760,9 @@ def reponds(pg, card, exp):
 # ---------- Les tenues et les danses d'Hector ----------
 # Ce que chaque récompense demande, écrit ici une seconde fois : (mesure, seuil).
 # q : questions réussies dans les exercices ; s : meilleure série à l'entraînement ; e : bonnes réponses à l'entraînement ; n : meilleure note à un contrôle blanc
-JEU_BUTS = {'crayon': ('q', 5), 'echarpe': ('q', 15), 'noeud': ('q', 30), 'lunettes': ('s', 5), 'toque': ('n', 10), 'couronne': ('n', 16),
+JEU_BUTS = {'echarpe': ('q', 5), 'noeud': ('q', 30), 'lunettes': ('s', 5), 'toque': ('n', 10), 'couronne': ('n', 16),
             'toupie': ('s', 3), 'jongleur': ('e', 10), 'disco': ('q', 50), 'moonwalk': ('q', 80)}
-JEU_TENUES = {'crayon': 'pencil', 'echarpe': 'scarf', 'noeud': 'bow', 'lunettes': 'shades', 'toque': 'cap', 'couronne': 'crown'}
+JEU_TENUES = {'echarpe': 'scarf', 'noeud': 'bow', 'lunettes': 'shades', 'toque': 'cap', 'couronne': 'crown'}
 JEU_GESTES = {'toupie': 'toupie', 'jongleur': 'jongle', 'disco': 'disco', 'moonwalk': 'moonwalk'}
 JEU_ETAT = """(() => { const v = document.getElementById('v-hector'), de = document.documentElement, cl = (s) => { const o = document.querySelector(s); return o ? [...o.classList] : []; };
   return { vue: !v.hidden, tuiles: [...v.querySelectorAll('.jeu-t')].map(t => t.dataset.rec), gagnees: [...v.querySelectorAll('.jeu-t.ok')].map(t => t.dataset.rec),
@@ -789,7 +789,7 @@ def jeu_faites(n, chap):
             if len(out) < n: out['%s:%d' % (e['id'], j)] = '1'
     return out
 def teste_jeu(pg, url):
-    w = 'tenues et danses'
+    w = 'tenues et danses'; N = len(JEU_BUTS)
     portees = lambda classes: sorted(c[4:] for c in classes if c.startswith('acc-'))
     # 1. Tant que la classe n'est pas choisie : rien
     jeu_telephone(pg, url, None)
@@ -798,12 +798,12 @@ def teste_jeu(pg, url):
     # 2. Une élève qui commence : le bouton de l'accueil, la vue, dix récompenses à gagner, chacune se regarde
     jeu_telephone(pg, url, {'niv': '3e', 'lang': 'both'})
     bouton = pg.query_selector('#home-jeu .jeu-b')
-    chk(bouton is not None and '0 / 10' in plat(bouton.inner_text()) and pg.query_selector('#home-jeu .jeu-neuf') is None, w + ' : le bouton de l’accueil doit annoncer 0 / 10, sans nouveauté')
+    chk(bouton is not None and '0 / %d' % N in plat(bouton.inner_text()) and pg.query_selector('#home-jeu .jeu-neuf') is None, w + ' : le bouton de l’accueil doit annoncer 0 / 10, sans nouveauté')
     if bouton is None: return
     bouton.click(); pg.wait_for_timeout(350)
     et = pg.evaluate(JEU_ETAT)
-    chk(et['vue'] and sorted(et['tuiles']) == sorted(JEU_BUTS) and et['gagnees'] == [] and plat(et['compte']) == '0 / 10' and not et['bouton'], '%s : au départ, dix récompenses à gagner (%s)' % (w, {k: et[k] for k in ('vue', 'tuiles', 'gagnees', 'compte', 'bouton')}))
-    chk(et['images'] == 10, '%s : chaque récompense doit avoir son image (%d sur 10)' % (w, et['images']))
+    chk(et['vue'] and sorted(et['tuiles']) == sorted(JEU_BUTS) and et['gagnees'] == [] and plat(et['compte']) == '0 / %d' % N and not et['bouton'], '%s : au départ, toutes les récompenses sont à gagner (%s)' % (w, {k: et[k] for k in ('vue', 'tuiles', 'gagnees', 'compte', 'bouton')}))
+    chk(et['images'] == N, '%s : chaque récompense doit avoir son image (%d sur %d)' % (w, et['images'], N))
     chk(et['defile'] <= 0 and et['large'] <= 0 and et['petites'] == 0, '%s : la vue doit tenir à l’écran, avec des boutons assez grands (défile %s, déborde %s, petits boutons %s)' % (w, et['defile'], et['large'], et['petites']))
     for k, (mesure, seuil) in JEU_BUTS.items():
         pg.click('#v-hector .jeu-t[data-rec="%s"]' % k); pg.wait_for_timeout(60)
@@ -817,10 +817,10 @@ def teste_jeu(pg, url):
     for q, s, e, n in [(4, 2, 9, None), (5, 0, 0, None), (29, 4, 9, 9), (30, 5, 10, 10), (50, 3, 0, 15), (80, 5, 10, 16), (total, 12, 60, 20)]:
         jeu_telephone(pg, url, {'niv': '3e', 'lang': 'both', 'solved': jeu_faites(q, 't1'), 'ch': {'t1': {'tr': {'streak': 0, 'best': s, 'total': e}, 'bestTest': n}}})
         att = jeu_attendu(q, s, e, n); cas = '%d questions, série %d, %d à l’entraînement, note %s' % (q, s, e, n)
-        chk('%d / 10' % len(att) in plat(pg.query_selector('#home-jeu .jeu-b').inner_text()) and (pg.query_selector('#home-jeu .jeu-neuf') is not None) == bool(att), '%s : accueil, %s : %d attendues (%s)' % (w, cas, len(att), plat(pg.query_selector('#home-jeu .jeu-b').inner_text())))
+        chk('%d / %d' % (len(att), N) in plat(pg.query_selector('#home-jeu .jeu-b').inner_text()) and (pg.query_selector('#home-jeu .jeu-neuf') is not None) == bool(att), '%s : accueil, %s : %d attendues (%s)' % (w, cas, len(att), plat(pg.query_selector('#home-jeu .jeu-b').inner_text())))
         pg.goto(url + '#hector'); pg.wait_for_timeout(250)
         et = pg.evaluate(JEU_ETAT)
-        chk(sorted(et['gagnees']) == att and plat(et['compte']) == '%d / 10' % len(att), '%s : %s : attendu %s, affiché %s' % (w, cas, att, sorted(et['gagnees'])))
+        chk(sorted(et['gagnees']) == att and plat(et['compte']) == '%d / %d' % (len(att), N), '%s : %s : attendu %s, affiché %s' % (w, cas, att, sorted(et['gagnees'])))
         chk(et['defile'] <= 0 and et['large'] <= 0, '%s : %s : la vue ne tient plus à l’écran (défile %s)' % (w, cas, et['defile']))
         pg.goto(url + '#accueil'); pg.wait_for_timeout(120)
         chk(pg.query_selector('#home-jeu .jeu-neuf') is None, '%s : %s : une fois vues, les récompenses ne sont plus « nouvelles »' % (w, cas))
@@ -833,10 +833,10 @@ def teste_jeu(pg, url):
     # Une récompense gagnée le reste, même si une question est remise « à refaire »
     jeu_telephone(pg, url, {'niv': '3e', 'lang': 'both', 'solved': jeu_faites(5, 't1')})
     etat = json.loads(pg.evaluate("localStorage.getItem('evo-chap10-v1')"))
-    chk((etat.get('jeu') or {}).get('ok') == {'crayon': 1}, '%s : le crayon gagné doit être enregistré (%s)' % (w, etat.get('jeu')))
+    chk((etat.get('jeu') or {}).get('ok') == {'echarpe': 1}, '%s : l’écharpe gagnée doit être enregistrée (%s)' % (w, etat.get('jeu')))
     etat['solved'] = jeu_faites(2, 't1'); jeu_telephone(pg, url, etat)
     pg.goto(url + '#hector'); pg.wait_for_timeout(250)
-    chk(pg.evaluate(JEU_ETAT)['gagnees'] == ['crayon'], w + ' : une récompense gagnée ne doit pas se perdre')
+    chk(pg.evaluate(JEU_ETAT)['gagnees'] == ['echarpe'], w + ' : une récompense gagnée ne doit pas se perdre')
     # 4. Porter une tenue : sur tous les Hector, gardée d'une fois sur l'autre ; deux tenues au même endroit ne se portent pas ensemble
     tout = {'niv': '3e', 'lang': 'both', 'solved': jeu_faites(total, 't1'), 'ch': {'t1': {'tr': {'streak': 0, 'best': 12, 'total': 60}, 'bestTest': 20}}}
     jeu_telephone(pg, url, tout); pg.goto(url + '#hector'); pg.wait_for_timeout(300)
@@ -844,18 +844,18 @@ def teste_jeu(pg, url):
         pg.click('#v-hector .jeu-t[data-rec="%s"]' % k); pg.wait_for_timeout(60)
         pg.click('#v-hector .jeu-a'); pg.wait_for_timeout(150)
         return pg.evaluate(JEU_ETAT)
-    for k, att in [('crayon', ['pencil']), ('echarpe', ['pencil', 'scarf']), ('noeud', ['bow', 'pencil']), ('toque', ['bow', 'cap', 'pencil']), ('couronne', ['bow', 'crown', 'pencil']), ('lunettes', ['bow', 'crown', 'pencil', 'shades'])]:
+    for k, att in [('echarpe', ['scarf']), ('noeud', ['bow']), ('toque', ['bow', 'cap']), ('couronne', ['bow', 'crown']), ('lunettes', ['bow', 'crown', 'shades'])]:
         et = touche(k)
         chk(portees(et['haut']) == att and portees(et['scene']) == att, '%s : après « Mettre » sur %s, Hector doit porter %s (barre %s, vue %s)' % (w, k, att, portees(et['haut']), portees(et['scene'])))
         chk(et['defile'] <= 0 and et['large'] <= 0, '%s : %s portée, la vue ne tient plus à l’écran' % (w, k))
     pg.reload(); pg.wait_for_timeout(450)
     et = pg.evaluate(JEU_ETAT)
-    chk(portees(et['haut']) == ['bow', 'crown', 'pencil', 'shades'], '%s : la tenue doit être gardée quand on relance l’application (%s)' % (w, portees(et['haut'])))
+    chk(portees(et['haut']) == ['bow', 'crown', 'shades'], '%s : la tenue doit être gardée quand on relance l’application (%s)' % (w, portees(et['haut'])))
     pg.goto(url + '#accueil'); pg.wait_for_timeout(200)
-    chk(portees(pg.evaluate(JEU_ETAT)['accueil']) == ['bow', 'crown', 'pencil', 'shades'], w + ' : l’Hector de l’accueil doit porter la même tenue')
+    chk(portees(pg.evaluate(JEU_ETAT)['accueil']) == ['bow', 'crown', 'shades'], w + ' : l’Hector de l’accueil doit porter la même tenue')
     pg.goto(url + '#hector'); pg.wait_for_timeout(250)
     et = touche('couronne')
-    chk(portees(et['haut']) == ['bow', 'pencil', 'shades'], '%s : « Enlever » doit retirer la couronne (%s)' % (w, portees(et['haut'])))
+    chk(portees(et['haut']) == ['bow', 'shades'], '%s : « Enlever » doit retirer la couronne (%s)' % (w, portees(et['haut'])))
     # 5. Danser : dans la vue, puis à la fin d'un exercice (la danse choisie en dernier)
     for k, geste in JEU_GESTES.items():
         et = touche(k)
@@ -881,12 +881,12 @@ def teste_jeu(pg, url):
     if fin['parts'][4]['kind'] == 'num' and va_a(pg, V, box.query_selector('input'), w):
         box.query_selector('input').fill(frnum(fin['parts'][4]['ans'], 8)); box.query_selector('.chk').click(); pg.wait_for_timeout(1700)
         bulle = pg.query_selector('.owl-bulle')
-        chk(bulle is not None and 'crayon' in bulle.inner_text(), '%s : à la cinquième question réussie, Hector doit annoncer le crayon (%s)' % (w, bulle.inner_text() if bulle else None))
+        chk(bulle is not None and 'écharpe' in bulle.inner_text(), '%s : à la cinquième question réussie, Hector doit annoncer l’écharpe (%s)' % (w, bulle.inner_text() if bulle else None))
         pg.goto(url + '#accueil'); pg.wait_for_timeout(200)
-        chk('1 / 10' in plat(pg.query_selector('#home-jeu .jeu-b').inner_text()) and pg.query_selector('#home-jeu .jeu-neuf') is not None, w + ' : l’accueil doit signaler la récompense gagnée')
+        chk('1 / %d' % N in plat(pg.query_selector('#home-jeu .jeu-b').inner_text()) and pg.query_selector('#home-jeu .jeu-neuf') is not None, w + ' : l’accueil doit signaler la récompense gagnée')
         pg.click('#home-jeu .jeu-b'); pg.wait_for_timeout(350)
         et = pg.evaluate(JEU_ETAT)
-        chk(et['gagnees'] == ['crayon'] and et['choisie'] == 'crayon' and et['bouton'], '%s : la vue doit s’ouvrir sur la récompense gagnée, prête à être portée (%s, %s)' % (w, et['gagnees'], et['choisie']))
+        chk(et['gagnees'] == ['echarpe'] and et['choisie'] == 'echarpe' and et['bouton'], '%s : la vue doit s’ouvrir sur la récompense gagnée, prête à être portée (%s, %s)' % (w, et['gagnees'], et['choisie']))
     else: fails.append(w + ' : la cinquième question du premier exercice de 3e devait être un nombre à taper')
     # 7. En Seconde, dans les trois langues : mêmes récompenses, rien ne déborde, tout tient à l'écran
     for l in ['fr', 'it', 'both']:

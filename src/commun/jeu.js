@@ -4,8 +4,7 @@
        e : bonnes réponses à l'entraînement             n : meilleure note à un contrôle blanc
      acc : l'accessoire du dessin (une tenue) ; gr : deux tenues du même groupe ne se portent pas ensemble ; pas : les gestes d'une danse. */
   var REC = [
-    { k: 'crayon', acc: 'pencil', vb: '84 50 216 156', fr: 'Le crayon', it: 'La matita', c: ['Crayon', 'Matita'], but: ['q', 5] },
-    { k: 'echarpe', acc: 'scarf', gr: 'cou', vb: '170 438 480 212', fr: 'L’écharpe', it: 'La sciarpa', c: ['Écharpe', 'Sciarpa'], but: ['q', 15] },
+    { k: 'echarpe', acc: 'scarf', gr: 'cou', vb: '170 438 480 212', fr: 'L’écharpe', it: 'La sciarpa', c: ['Écharpe', 'Sciarpa'], but: ['q', 5] },
     { k: 'noeud', acc: 'bow', gr: 'cou', vb: '262 434 296 144', fr: 'Le nœud papillon', it: 'Il papillon', c: ['Nœud papillon', 'Papillon'], but: ['q', 30] },
     { k: 'lunettes', acc: 'shades', vb: '50 120 720 340', fr: 'Les lunettes de soleil', it: 'Gli occhiali da sole', c: ['Lunettes', 'Occhiali'], but: ['s', 5] },
     { k: 'toque', acc: 'cap', gr: 'tete', vb: '170 -48 480 210', fr: 'La toque', it: 'Il tocco', c: ['Toque', 'Tocco'], but: ['n', 10] },

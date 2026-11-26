@@ -817,8 +817,6 @@ a,button,input,label,summary,.chip,.tab,.choice{touch-action:manipulation}
 /* ----- Tenues et danses à débloquer ----- */
 .owl.acc-bow .owl-acc-bow, .owl.acc-shades .owl-acc-shades, .owl.acc-crown .owl-acc-crown { display: inline; }
 .owl .owl-acc-crown { transform-origin: 410px 60px; }
-/* le crayon derrière l'oreille : un peu plus grand, pour qu'on le voie aussi sur le petit Hector de la barre du haut */
-.owl .owl-acc-pencil { transform-origin: 108px 78px; transform: translate(-46px, -52px) scale(1.45); }
 /* La toupie : deux tours sur soi-même, puis un petit saut */
 .owl.a-toupie .owl-all { transform-origin: 410px 480px; animation: owl-toupie 1.8s cubic-bezier(.45, 0, .3, 1); }
 @keyframes owl-toupie { 0% { transform: none; } 70% { transform: rotate(720deg); } 84% { transform: rotate(720deg) translateY(-80px); } 100% { transform: rotate(720deg); } }
@@ -9499,7 +9497,7 @@ const h = (html) => { const t = document.createElement("template"); t.innerHTML 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const inline = (s) => s;
 // Les tenues : les accessoires du dessin qu'Hector peut porter. Lesquels sont portés se règle avec Hector.tenue([...]).
-const ACCS = ["pencil", "scarf", "cap", "bow", "shades", "crown"].map((k) => ({ k, lvl: 1 }));
+const ACCS = ["scarf", "cap", "bow", "shades", "crown"].map((k) => ({ k, lvl: 1 }));
 const levelOf = () => 1;
 const S = { xp: 0, owl: { acc: {} } };
 ACCS.forEach((a) => { S.owl.acc[a.k] = false; });
@@ -12998,8 +12996,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
        e : bonnes réponses à l'entraînement             n : meilleure note à un contrôle blanc
      acc : l'accessoire du dessin (une tenue) ; gr : deux tenues du même groupe ne se portent pas ensemble ; pas : les gestes d'une danse. */
   var REC = [
-    { k: 'crayon', acc: 'pencil', vb: '84 50 216 156', fr: 'Le crayon', it: 'La matita', c: ['Crayon', 'Matita'], but: ['q', 5] },
-    { k: 'echarpe', acc: 'scarf', gr: 'cou', vb: '170 438 480 212', fr: 'L’écharpe', it: 'La sciarpa', c: ['Écharpe', 'Sciarpa'], but: ['q', 15] },
+    { k: 'echarpe', acc: 'scarf', gr: 'cou', vb: '170 438 480 212', fr: 'L’écharpe', it: 'La sciarpa', c: ['Écharpe', 'Sciarpa'], but: ['q', 5] },
     { k: 'noeud', acc: 'bow', gr: 'cou', vb: '262 434 296 144', fr: 'Le nœud papillon', it: 'Il papillon', c: ['Nœud papillon', 'Papillon'], but: ['q', 30] },
     { k: 'lunettes', acc: 'shades', vb: '50 120 720 340', fr: 'Les lunettes de soleil', it: 'Gli occhiali da sole', c: ['Lunettes', 'Occhiali'], but: ['s', 5] },
     { k: 'toque', acc: 'cap', gr: 'tete', vb: '170 -48 480 210', fr: 'La toque', it: 'Il tocco', c: ['Toque', 'Tocco'], but: ['n', 10] },
@@ -13193,7 +13190,7 @@ window.Hector = { Owl: Owl, confetti: confetti, phrases: function(a){ if (a && a
 <script>
 // Version installable : hors ligne grâce au service worker ; au retour dans l'appli, on recharge si une version plus récente est en ligne.
 (function(){
-  var V = "dd278e1e26", dernier = 0, sw = navigator.serviceWorker;
+  var V = "d4d7e5b42c", dernier = 0, sw = navigator.serviceWorker;
   var POLICES = ['400 1em "Atkinson Hyperlegible"', '700 1em "Atkinson Hyperlegible"', 'italic 400 1em "Atkinson Hyperlegible"', '500 1em Fredoka', '600 1em Fredoka', '700 1em Fredoka',
     '400 1em "STIX Two Text"', '600 1em "STIX Two Text"', 'italic 400 1em "STIX Two Text"'];
   /* Hors ligne complet dès la première visite. La page charge ses polices avant que le service worker soit actif : il ne les a
